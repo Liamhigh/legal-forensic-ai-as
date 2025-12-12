@@ -8,6 +8,9 @@ import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PDFViewer } from '@/components/PDFViewer'
 import { DocumentUpload } from '@/components/DocumentUpload'
+import { SessionStatus } from '@/components/SessionStatus'
+import { getForensicLanguageRules } from '@/services/constitutionalEnforcement'
+import { getCurrentSession, isSessionLocked } from '@/services/authContext'
 
 interface Message {
   id: string
@@ -42,6 +45,14 @@ function App() {
     const messageContent = content || input.trim()
     if (!messageContent || isLoading) return
 
+    // Check if session is locked
+    if (isSessionLocked()) {
+      toast.error('Session locked due to constitutional violation', {
+        description: 'Please refresh to start a new session'
+      })
+      return
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -54,11 +65,16 @@ function App() {
     setIsLoading(true)
 
     try {
-      const prompt = (window as any).spark.llmPrompt`You are Verum Omnis, the world's first AI-powered legal forensics assistant. You help legal professionals analyze evidence, research case law, and construct compelling arguments. Provide detailed, professional, and accurate responses to legal forensic inquiries.
+      // Get forensic language enforcement rules
+      const forensicRules = getForensicLanguageRules()
+      
+      const prompt = (window as any).spark.llmPrompt`You are Verum Omnis, the world's first AI-powered legal forensics assistant. You help legal professionals analyze evidence, research case law, and construct compelling arguments.
+
+${forensicRules}
 
 User query: ${messageContent}
 
-Provide a thorough analysis with specific legal considerations.`
+Provide a thorough forensic analysis with specific legal considerations, adhering strictly to the constitutional enforcement constraints above.`
 
       const response = await (window as any).spark.llm(prompt, 'gpt-4o')
 
@@ -110,17 +126,20 @@ Provide a thorough analysis with specific legal considerations.`
               </p>
             </div>
           </div>
-          {messageList.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClear}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <Trash size={18} weight="regular" />
-              <span className="ml-2">Clear</span>
-            </Button>
-          )}
+          <div className="flex items-center gap-3">
+            <SessionStatus />
+            {messageList.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClear}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Trash size={18} weight="regular" />
+                <span className="ml-2">Clear</span>
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 

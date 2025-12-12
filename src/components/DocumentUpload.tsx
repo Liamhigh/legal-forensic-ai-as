@@ -1,15 +1,26 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Upload, CheckCircle, Shield, Download } from '@phosphor-icons/react'
+import { Upload, CheckCircle, Shield, Download, Warning } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { sealDocument, verifySeal, formatSealInfo } from '@/services/documentSealing'
+import { 
+  determineContext, 
+  verifyAuthenticity, 
+  constitutionalGate,
+  generateRefusalReport,
+  type InputBundle,
+  EnforcementOutcome
+} from '@/services/constitutionalEnforcement'
+import { getCurrentSession, lockSession } from '@/services/authContext'
 
 interface UploadedDocument {
   name: string
   content: string | ArrayBuffer
   sealed: boolean
   sealInfo?: string
+  enforcementDenied?: boolean
+  denialReason?: string
 }
 
 export function DocumentUpload() {
@@ -30,19 +41,88 @@ export function DocumentUpload() {
                          file.name.endsWith('.md')
       const content = isTextFile ? await file.text() : await file.arrayBuffer()
       
+      // Create input bundle for constitutional enforcement
+      const inputBundle: InputBundle = {
+        fileName: file.name,
+        content,
+        fileType: file.type || 'unknown',
+        size: file.size
+      }
+
+      // STEP 1: Constitutional Enforcement - Context & Standing Detection
+      toast.loading('Analyzing document context and standing...')
+      const contextResult = determineContext(inputBundle)
+      
+      // STEP 2: Constitutional Enforcement - Authenticity Verification
+      const authenticityResult = verifyAuthenticity(inputBundle)
+      
+      // STEP 3: Constitutional Enforcement - Apply Constitutional Gate
+      const session = getCurrentSession()
+      const enforcementResult = constitutionalGate(
+        inputBundle,
+        contextResult,
+        authenticityResult,
+        session.isAuthenticated,
+        session.isInstitutional
+      )
+
+      // STEP 4: Handle enforcement decision
+      if (!enforcementResult.allowed) {
+        // Processing DENIED - Lock session and seal everything
+        lockSession()
+        
+        toast.dismiss()
+        toast.error('Document Processing Denied', {
+          description: 'Constitutional enforcement criteria not met - Session locked',
+          duration: 5000
+        })
+
+        // Generate sealed refusal report
+        const refusalReport = generateRefusalReport(
+          inputBundle,
+          enforcementResult,
+          contextResult,
+          authenticityResult
+        )
+
+        // Seal the refusal report
+        const sealedRefusal = await sealDocument(refusalReport, `refusal_${file.name}.txt`)
+
+        setUploadedDoc({
+          name: file.name,
+          content: sealedRefusal.originalContent,
+          sealed: true,
+          sealInfo: formatSealInfo(sealedRefusal.seal),
+          enforcementDenied: true,
+          denialReason: enforcementResult.reason
+        })
+        return
+      }
+
+      // STEP 5: Processing ALLOWED - Proceed with sealing
+      toast.dismiss()
+      
+      // Handle enforcement warnings (suspicious content)
+      if (enforcementResult.outcome === EnforcementOutcome.ALLOWED && 
+          enforcementResult.reason.includes('caution')) {
+        toast.warning('Document accepted with caution flags', {
+          description: enforcementResult.reason,
+          duration: 4000
+        })
+      }
+
       // Seal the document
       toast.loading('Sealing document cryptographically...')
       const sealed = await sealDocument(content, file.name)
       
       if (sealed.isVerumOmnisSealed) {
         // Already sealed - verify instead
-        const verification = await verifySeal(content)
+        const verification = await verifySeal(typeof sealed.originalContent === 'string' ? sealed.originalContent : new TextDecoder().decode(sealed.originalContent))
         toast.dismiss()
         if (verification.isValid) {
           toast.success('✓ Document verified - Already sealed by Verum Omnis', {
             description: verification.message
           })
-          // Store original content for binary files, convert only for display
           const contentForStorage = typeof sealed.originalContent === 'string' 
             ? sealed.originalContent 
             : sealed.originalContent
@@ -63,7 +143,7 @@ export function DocumentUpload() {
         toast.success('✓ Document sealed cryptographically', {
           description: `Sealed with ${sealed.seal.jurisdiction || 'location data'}`
         })
-        // Store original content for binary files
+        // Store original content - convert for storage
         const contentForStorage = typeof sealed.originalContent === 'string' 
           ? sealed.originalContent 
           : sealed.originalContent
@@ -146,17 +226,34 @@ export function DocumentUpload() {
           </Button>
         ) : (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-              <CheckCircle size={24} weight="fill" className="text-green-600" />
+            <div className={`flex items-center gap-2 p-3 rounded-lg ${
+              uploadedDoc.enforcementDenied ? 'bg-red-50 dark:bg-red-950/20' : 'bg-muted'
+            }`}>
+              {uploadedDoc.enforcementDenied ? (
+                <Warning size={24} weight="fill" className="text-red-600" />
+              ) : (
+                <CheckCircle size={24} weight="fill" className="text-green-600" />
+              )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">
                   {uploadedDoc.name}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Cryptographically sealed
+                  {uploadedDoc.enforcementDenied ? 'Processing denied - sealed refusal report' : 'Cryptographically sealed'}
                 </p>
               </div>
             </div>
+
+            {uploadedDoc.enforcementDenied && uploadedDoc.denialReason && (
+              <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                <p className="text-xs font-semibold text-red-900 dark:text-red-100 mb-1">
+                  Constitutional Enforcement Notice
+                </p>
+                <p className="text-xs text-red-800 dark:text-red-200">
+                  {uploadedDoc.denialReason}
+                </p>
+              </div>
+            )}
 
             {uploadedDoc.sealInfo && (
               <div className="p-3 bg-muted rounded-lg">
@@ -173,7 +270,7 @@ export function DocumentUpload() {
                 className="flex-1"
               >
                 <Download size={18} weight="regular" className="mr-2" />
-                Download Sealed
+                Download {uploadedDoc.enforcementDenied ? 'Report' : 'Sealed'}
               </Button>
               <Button
                 onClick={handleUploadClick}
