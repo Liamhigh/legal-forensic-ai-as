@@ -21,3 +21,38 @@ No problem! If you were just checking things out and don’t need to keep this c
 📄 License For Spark Template Resources 
 
 The Spark Template files and resources from GitHub are licensed under the terms of the MIT license, Copyright GitHub, Inc.
+
+---
+
+## 📱 Android App
+
+This project now includes a native Android application built with Capacitor!
+
+### Building the Android App
+
+The Verum Omnis application can be built as a native Android app that includes:
+- Full AI-powered legal forensics interface
+- Integrated Master Forensic Archive PDF (v5.2.7)
+- **Cryptographic Document Sealing**: SHA-256 hash sealing for all uploads/downloads
+- **Geolocation Support**: Jurisdiction detection and timestamp accuracy
+- **Automated Builds**: GitHub Actions workflow for signed APK releases
+- Native Android performance
+- Offline capabilities
+
+### Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Build and sync to Android
+npm run android:build
+
+# Open in Android Studio
+npm run android:open
+```
+
+For detailed Android build instructions, see [ANDROID_BUILD.md](./ANDROID_BUILD.md).
+
+For signing and automated builds setup, see [SIGNING_SETUP.md](./SIGNING_SETUP.md).
+
