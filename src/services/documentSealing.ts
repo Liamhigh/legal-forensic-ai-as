@@ -68,18 +68,28 @@ async function getLocation(): Promise<{ latitude: number; longitude: number; acc
         accuracy: position.coords.accuracy
       }
     } else if (navigator.geolocation) {
-      // Web fallback
+      // Web fallback with timeout
       return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          console.warn('Web geolocation timed out')
+          resolve(undefined)
+        }, 10000) // 10 second timeout
+
         navigator.geolocation.getCurrentPosition(
-          (position) => resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy
-          }),
+          (position) => {
+            clearTimeout(timeout)
+            resolve({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy
+            })
+          },
           () => {
+            clearTimeout(timeout)
             console.warn('Web geolocation failed')
             resolve(undefined)
-          }
+          },
+          { timeout: 10000, enableHighAccuracy: true }
         )
       })
     }
@@ -89,17 +99,29 @@ async function getLocation(): Promise<{ latitude: number; longitude: number; acc
   return undefined
 }
 
+// Approximate geographic boundaries for jurisdiction detection
+const JURISDICTION_BOUNDS = {
+  US: { latMin: 24.5, latMax: 49.4, lonMin: -125, lonMax: -66.9 },
+  CANADA: { latMin: 41.9, latMax: 83.1, lonMin: -141, lonMax: -52.6 },
+  UK: { latMin: 49.9, latMax: 59.4, lonMin: -8.6, lonMax: 1.8 }
+}
+
 /**
  * Determine jurisdiction based on location
  */
 function getJurisdiction(latitude: number, longitude: number): string {
   // Simplified jurisdiction detection
   // In production, use a proper reverse geocoding service
-  if (latitude >= 24.5 && latitude <= 49.4 && longitude >= -125 && longitude <= -66.9) {
+  const { US, CANADA, UK } = JURISDICTION_BOUNDS
+  
+  if (latitude >= US.latMin && latitude <= US.latMax && 
+      longitude >= US.lonMin && longitude <= US.lonMax) {
     return 'United States'
-  } else if (latitude >= 41.9 && latitude <= 83.1 && longitude >= -141 && longitude <= -52.6) {
+  } else if (latitude >= CANADA.latMin && latitude <= CANADA.latMax && 
+             longitude >= CANADA.lonMin && longitude <= CANADA.lonMax) {
     return 'Canada'
-  } else if (latitude >= 49.9 && latitude <= 59.4 && longitude >= -8.6 && longitude <= 1.8) {
+  } else if (latitude >= UK.latMin && latitude <= UK.latMax && 
+             longitude >= UK.lonMin && longitude <= UK.lonMax) {
     return 'United Kingdom'
   }
   return 'International'
@@ -121,7 +143,8 @@ export function isVerumOmnisSealed(content: string): boolean {
   try {
     // Check for seal marker in content
     if (content.includes(SEAL_MARKER)) {
-      const sealMatch = content.match(/VERUM_OMNIS_SEAL_DATA:({.*?})/s)
+      // More specific regex to match complete JSON structure
+      const sealMatch = content.match(/VERUM_OMNIS_SEAL_DATA:(\{(?:[^{}]|\{[^{}]*\})*\})/s)
       if (sealMatch) {
         const sealData = JSON.parse(sealMatch[1])
         return sealData.sealedBy === SEAL_AUTHORITY && sealData.sealed === true
@@ -146,7 +169,8 @@ export async function verifySeal(sealedContent: string): Promise<{
       return { isValid: false, message: 'No Verum Omnis seal found' }
     }
 
-    const sealMatch = sealedContent.match(/VERUM_OMNIS_SEAL_DATA:({.*?})/s)
+    // More specific regex to match complete JSON structure
+    const sealMatch = sealedContent.match(/VERUM_OMNIS_SEAL_DATA:(\{(?:[^{}]|\{[^{}]*\})*\})/s)
     if (!sealMatch) {
       return { isValid: false, message: 'Seal data corrupted' }
     }
@@ -191,7 +215,7 @@ export async function sealDocument(
     const verification = await verifySeal(contentStr)
     
     // Extract existing seal
-    const sealMatch = contentStr.match(/VERUM_OMNIS_SEAL_DATA:({.*?})/s)
+    const sealMatch = contentStr.match(/VERUM_OMNIS_SEAL_DATA:(\{(?:[^{}]|\{[^{}]*\})*\})/s)
     const seal: SealMetadata = sealMatch ? JSON.parse(sealMatch[1]) : {
       documentHash: await generateHash(content),
       timestamp: Date.now(),

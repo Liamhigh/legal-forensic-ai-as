@@ -7,7 +7,7 @@ import { sealDocument, verifySeal, formatSealInfo } from '@/services/documentSea
 
 interface UploadedDocument {
   name: string
-  content: string
+  content: string | ArrayBuffer
   sealed: boolean
   sealInfo?: string
 }
@@ -24,7 +24,11 @@ export function DocumentUpload() {
     setIsProcessing(true)
     
     try {
-      const content = await file.text()
+      // Read file as text or binary based on type
+      const isTextFile = file.type.startsWith('text/') || 
+                         file.name.endsWith('.txt') || 
+                         file.name.endsWith('.md')
+      const content = isTextFile ? await file.text() : await file.arrayBuffer()
       
       // Seal the document
       toast.loading('Sealing document cryptographically...')
@@ -38,9 +42,13 @@ export function DocumentUpload() {
           toast.success('✓ Document verified - Already sealed by Verum Omnis', {
             description: verification.message
           })
+          // Store original content for binary files, convert only for display
+          const contentForStorage = typeof sealed.originalContent === 'string' 
+            ? sealed.originalContent 
+            : sealed.originalContent
           setUploadedDoc({
             name: file.name,
-            content: typeof sealed.originalContent === 'string' ? sealed.originalContent : new TextDecoder().decode(sealed.originalContent),
+            content: contentForStorage,
             sealed: true,
             sealInfo: verification.seal ? formatSealInfo(verification.seal) : 'Verified'
           })
@@ -55,9 +63,13 @@ export function DocumentUpload() {
         toast.success('✓ Document sealed cryptographically', {
           description: `Sealed with ${sealed.seal.jurisdiction || 'location data'}`
         })
+        // Store original content for binary files
+        const contentForStorage = typeof sealed.originalContent === 'string' 
+          ? sealed.originalContent 
+          : sealed.originalContent
         setUploadedDoc({
           name: file.name,
-          content: typeof sealed.originalContent === 'string' ? sealed.originalContent : new TextDecoder().decode(sealed.originalContent),
+          content: contentForStorage,
           sealed: true,
           sealInfo: formatSealInfo(sealed.seal)
         })
@@ -78,7 +90,12 @@ export function DocumentUpload() {
   const handleDownload = () => {
     if (!uploadedDoc) return
 
-    const blob = new Blob([uploadedDoc.content], { type: 'text/plain' })
+    // Determine MIME type based on file extension
+    const mimeType = uploadedDoc.name.endsWith('.pdf') ? 'application/pdf' :
+                     uploadedDoc.name.endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :
+                     'text/plain'
+
+    const blob = new Blob([uploadedDoc.content], { type: mimeType })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
