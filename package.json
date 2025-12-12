@@ -19,6 +19,7 @@
         "@capacitor/cli": "^7.4.4",
         "@capacitor/core": "^8.0.0",
         "@capacitor/filesystem": "^8.0.0",
+        "@capacitor/geolocation": "^8.0.0",
         "@github/spark": ">=0.43.1 <1",
         "@heroicons/react": "^2.2.0",
         "@hookform/resolvers": "^4.1.3",

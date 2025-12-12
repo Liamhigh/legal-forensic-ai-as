@@ -72,10 +72,28 @@ Or build and run from Android Studio after opening the project.
 The Android app includes:
 - Full Verum Omnis legal forensics AI interface
 - Access to the Master Forensic Archive PDF (v5.2.7 Institutional Edition)
+- **Cryptographic Document Sealing**: All uploaded documents are cryptographically sealed with SHA-256 hash
+- **Geolocation Integration**: Captures location data for jurisdictional compliance and accurate timestamps
+- **Seal Verification**: Previously sealed documents are verified, not re-sealed
 - Native Android performance through Capacitor
 - Offline capabilities with bundled assets
 
-## Building APK/AAB
+## Automated Builds with GitHub Actions
+
+The repository includes a GitHub Actions workflow that automatically builds APKs:
+- **Debug APK**: Built on every push and pull request
+- **Signed Release APK**: Built on main branch with signing keys configured
+
+See [SIGNING_SETUP.md](./SIGNING_SETUP.md) for instructions on configuring signing keys.
+
+The workflow:
+1. Builds the web application
+2. Syncs to Android platform
+3. Builds debug/release APK
+4. Uploads as artifacts
+5. Creates GitHub releases (for main branch)
+
+## Building APK/AAB Manually
 
 ### Debug APK
 From Android Studio:

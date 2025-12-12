@@ -7,6 +7,7 @@ import { Scales, PaperPlaneRight, Trash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PDFViewer } from '@/components/PDFViewer'
+import { DocumentUpload } from '@/components/DocumentUpload'
 
 interface Message {
   id: string
@@ -127,8 +128,9 @@ Provide a thorough analysis with specific legal considerations.`
         <ScrollArea className="h-full">
           <div ref={scrollRef} className="max-w-4xl mx-auto px-6 py-6">
             {messageList.length === 0 && (
-              <div className="mb-6">
+              <div className="space-y-6 mb-6">
                 <PDFViewer />
+                <DocumentUpload />
               </div>
             )}
             {messageList.length === 0 ? (
