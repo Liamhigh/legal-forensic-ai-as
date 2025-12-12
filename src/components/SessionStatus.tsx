@@ -7,12 +7,13 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { User, Building, SignOut, ShieldCheck } from '@phosphor-icons/react'
+import { User, Building, SignOut, ShieldCheck, LockKey } from '@phosphor-icons/react'
 import { 
   getCurrentSession, 
   authenticateInstitutionalUser, 
   logout,
-  initializePublicSession 
+  initializePublicSession,
+  isSessionLocked
 } from '@/services/authContext'
 import { toast } from 'sonner'
 
@@ -21,8 +22,14 @@ export function SessionStatus() {
   const [showLogin, setShowLogin] = useState(false)
   const [userId, setUserId] = useState('')
   const [institutionName, setInstitutionName] = useState('')
+  const sessionLocked = isSessionLocked()
 
   const handleLogin = () => {
+    if (sessionLocked) {
+      toast.error('Session is locked due to constitutional violation')
+      return
+    }
+    
     if (!userId.trim() || !institutionName.trim()) {
       toast.error('Please enter both user ID and institution name')
       return
@@ -94,7 +101,14 @@ export function SessionStatus() {
 
   return (
     <div className="flex items-center gap-2">
-      {session.isAuthenticated && session.isInstitutional ? (
+      {sessionLocked ? (
+        <div className="flex items-center gap-2 px-3 py-1 bg-red-100 dark:bg-red-900/20 rounded-md border border-red-300 dark:border-red-800">
+          <LockKey size={16} weight="fill" className="text-red-700 dark:text-red-400" />
+          <span className="text-xs font-medium text-red-800 dark:text-red-300">
+            Session Locked
+          </span>
+        </div>
+      ) : session.isAuthenticated && session.isInstitutional ? (
         <>
           <div className="flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/20 rounded-md">
             <ShieldCheck size={16} weight="fill" className="text-green-700 dark:text-green-400" />

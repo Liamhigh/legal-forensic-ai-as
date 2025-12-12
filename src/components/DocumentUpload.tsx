@@ -12,7 +12,7 @@ import {
   type InputBundle,
   EnforcementOutcome
 } from '@/services/constitutionalEnforcement'
-import { getCurrentSession } from '@/services/authContext'
+import { getCurrentSession, lockSession } from '@/services/authContext'
 
 interface UploadedDocument {
   name: string
@@ -68,10 +68,12 @@ export function DocumentUpload() {
 
       // STEP 4: Handle enforcement decision
       if (!enforcementResult.allowed) {
-        // Processing DENIED - but still seal everything
+        // Processing DENIED - Lock session and seal everything
+        lockSession()
+        
         toast.dismiss()
         toast.error('Document Processing Denied', {
-          description: 'Constitutional enforcement criteria not met',
+          description: 'Constitutional enforcement criteria not met - Session locked',
           duration: 5000
         })
 
