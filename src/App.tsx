@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Scales, PaperPlaneRight, Trash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
+import { PDFViewer } from '@/components/PDFViewer'
 
 interface Message {
   id: string
@@ -125,6 +126,11 @@ Provide a thorough analysis with specific legal considerations.`
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div ref={scrollRef} className="max-w-4xl mx-auto px-6 py-6">
+            {messageList.length === 0 && (
+              <div className="mb-6">
+                <PDFViewer />
+              </div>
+            )}
             {messageList.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}

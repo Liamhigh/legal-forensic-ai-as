@@ -9,9 +9,16 @@
         "build": "tsc -b --noCheck && vite build",
         "lint": "eslint .",
         "optimize": "vite optimize",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "android:build": "npm run build && npx cap sync android && npx cap copy android",
+        "android:open": "npx cap open android",
+        "android:run": "npm run build && npx cap sync android && npx cap run android"
     },
     "dependencies": {
+        "@capacitor/android": "^8.0.0",
+        "@capacitor/cli": "^7.4.4",
+        "@capacitor/core": "^8.0.0",
+        "@capacitor/filesystem": "^8.0.0",
         "@github/spark": ">=0.43.1 <1",
         "@heroicons/react": "^2.2.0",
         "@hookform/resolvers": "^4.1.3",
