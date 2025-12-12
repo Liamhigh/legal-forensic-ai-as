@@ -1,4 +1,4 @@
-package com.getcapacitor.myapp;
+package com.verumomnis.forensics;
 
 import static org.junit.Assert.*;
 

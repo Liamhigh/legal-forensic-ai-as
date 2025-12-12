@@ -1,16 +1,14 @@
-import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { FileText } from '@phosphor-icons/react'
 import { Card } from '@/components/ui/card'
 
+const PDF_URL = '/pdfs/Verum_Omnis_Master_Forensic_Archive_v5.2.7_(Institutional_Edition).PDF'
+
 export function PDFViewer() {
-  const [isOpen, setIsOpen] = useState(false)
-  
-  const pdfUrl = '/pdfs/Verum_Omnis_Master_Forensic_Archive_v5.2.7_(Institutional_Edition).PDF'
   
   const openPDF = () => {
     // Open PDF in new window/tab
-    window.open(pdfUrl, '_blank')
+    window.open(PDF_URL, '_blank')
   }
   
   return (
