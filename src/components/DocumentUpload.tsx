@@ -143,6 +143,7 @@ export function DocumentUpload() {
         toast.success('✓ Document sealed cryptographically', {
           description: `Sealed with ${sealed.seal.jurisdiction || 'location data'}`
         })
+        // Store original content - convert for storage
         const contentForStorage = typeof sealed.originalContent === 'string' 
           ? sealed.originalContent 
           : sealed.originalContent

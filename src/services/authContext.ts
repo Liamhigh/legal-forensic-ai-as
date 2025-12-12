@@ -22,10 +22,13 @@ let currentSession: UserSession = {
 }
 
 /**
- * Generate a unique session ID
+ * Generate a unique session ID using crypto.getRandomValues for security
  */
 function generateSessionId(): string {
-  return `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
+  const array = new Uint8Array(16)
+  crypto.getRandomValues(array)
+  const randomHex = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+  return `session_${Date.now()}_${randomHex}`
 }
 
 /**

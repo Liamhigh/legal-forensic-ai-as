@@ -68,8 +68,7 @@ export function determineContext(inputBundle: InputBundle): ContextResult {
   let context = DocumentContext.UNKNOWN_OR_AMBIGUOUS
   let confidence = 0.5
 
-  // Convert to lowercase for case-insensitive matching
-  const contentLower = content.toLowerCase()
+  // Use case-insensitive regex directly instead of converting entire content
   const fileNameLower = inputBundle.fileName.toLowerCase()
 
   // Business/Corporate indicators
@@ -141,6 +140,7 @@ export function determineContext(inputBundle: InputBundle): ContextResult {
   const namePattern = /\b([A-Z][a-z]+ [A-Z][a-z]+)\b/g
   const names = new Set<string>()
   let match
+  namePattern.lastIndex = 0 // Reset regex state
   while ((match = namePattern.exec(content)) !== null) {
     names.add(match[1])
   }
@@ -189,6 +189,7 @@ export function verifyAuthenticity(inputBundle: InputBundle): AuthenticityResult
   const yearPattern = /\b(19|20)\d{2}\b/g
   const years: number[] = []
   let yearMatch
+  yearPattern.lastIndex = 0 // Reset regex state
   while ((yearMatch = yearPattern.exec(content)) !== null) {
     years.push(parseInt(yearMatch[0]))
   }
@@ -250,6 +251,7 @@ export function verifyAuthenticity(inputBundle: InputBundle): AuthenticityResult
   const lines = new Set<string>()
   let duplicates = 0
   let lineMatch
+  duplicateLinePattern.lastIndex = 0 // Reset regex state
   while ((lineMatch = duplicateLinePattern.exec(content)) !== null) {
     if (lines.has(lineMatch[1])) {
       duplicates++
