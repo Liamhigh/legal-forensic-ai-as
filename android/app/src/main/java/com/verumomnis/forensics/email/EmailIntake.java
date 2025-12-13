@@ -143,7 +143,9 @@ public class EmailIntake {
             String fname = entity.getFilename();
             if (fname == null) fname = "attachment_" + System.currentTimeMillis() + "_" + count;
             File out = new File(dir, fname);
-            try (InputStream in = ((org.apache.james.mime4j.dom.TextBody) entity.getBody()).getInputStream();
+            
+            // Handle both text and binary bodies
+            try (InputStream in = getBodyInputStream(entity.getBody());
                  OutputStream os = new FileOutputStream(out)) {
                 byte[] buf = new byte[8192];
                 int n;
@@ -152,6 +154,16 @@ public class EmailIntake {
             count++;
         }
         return count;
+    }
+    
+    private static InputStream getBodyInputStream(org.apache.james.mime4j.dom.Body body) throws Exception {
+        if (body instanceof org.apache.james.mime4j.dom.TextBody) {
+            return ((org.apache.james.mime4j.dom.TextBody) body).getInputStream();
+        } else if (body instanceof org.apache.james.mime4j.dom.BinaryBody) {
+            return ((org.apache.james.mime4j.dom.BinaryBody) body).getInputStream();
+        } else {
+            throw new IllegalArgumentException("Unsupported body type: " + body.getClass().getName());
+        }
     }
     
     /* ---------- dto ---------- */

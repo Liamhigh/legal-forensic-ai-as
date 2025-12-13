@@ -58,16 +58,19 @@ public class CaseFileManager {
         List<File> sealedFiles = new ArrayList<>();
         
         // Find email bundles
-        for (File f : filesDir.listFiles()) {
-            if (f.getName().startsWith("email_bundle_") && f.getName().endsWith(".zip")) {
-                sealedFiles.add(f);
+        File[] files = filesDir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.getName().startsWith("email_bundle_") && f.getName().endsWith(".zip")) {
+                    sealedFiles.add(f);
+                }
             }
-        }
-        
-        // Find forensic reports
-        for (File f : filesDir.listFiles()) {
-            if (f.getName().startsWith("VO_Forensic_Report_") && f.getName().endsWith(".pdf")) {
-                sealedFiles.add(f);
+            
+            // Find forensic reports
+            for (File f : files) {
+                if (f.getName().startsWith("VO_Forensic_Report_") && f.getName().endsWith(".pdf")) {
+                    sealedFiles.add(f);
+                }
             }
         }
         
@@ -139,10 +142,13 @@ public class CaseFileManager {
         File filesDir = ctx.getFilesDir();
         int count = 0;
         
-        for (File f : filesDir.listFiles()) {
-            if ((f.getName().startsWith("email_bundle_") && f.getName().endsWith(".zip")) ||
-                (f.getName().startsWith("VO_Forensic_Report_") && f.getName().endsWith(".pdf"))) {
-                count++;
+        File[] files = filesDir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if ((f.getName().startsWith("email_bundle_") && f.getName().endsWith(".zip")) ||
+                    (f.getName().startsWith("VO_Forensic_Report_") && f.getName().endsWith(".pdf"))) {
+                    count++;
+                }
             }
         }
         

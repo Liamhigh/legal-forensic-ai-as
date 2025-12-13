@@ -34,12 +34,22 @@ public class SealGate {
         File file;
         
         // If it's a file URI, get the file directly
-        if (fileUri.getScheme().equals("file")) {
+        if ("file".equals(fileUri.getScheme())) {
             file = new File(fileUri.getPath());
         } else {
-            // For content URIs, we need to copy the content first
-            // This is a simplified version - in production you'd handle this better
-            file = new File(fileUri.getPath());
+            // For content URIs, create a temporary file and copy content
+            file = File.createTempFile("seal_", ".tmp", ctx.getCacheDir());
+            try (InputStream in = ctx.getContentResolver().openInputStream(fileUri);
+                 java.io.OutputStream out = new java.io.FileOutputStream(file)) {
+                if (in == null) {
+                    throw new IOException("Cannot open input stream for URI");
+                }
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                }
+            }
         }
         
         // Calculate SHA-512 hash
