@@ -222,8 +222,12 @@ public class EmailIntake {
     }
     
     private static void deleteRecursive(File f) {
-        if (f.isDirectory())
-            for (File c : Objects.requireNonNull(f.listFiles())) deleteRecursive(c);
+        if (f.isDirectory()) {
+            File[] files = f.listFiles();
+            if (files != null) {
+                for (File c : files) deleteRecursive(c);
+            }
+        }
         //noinspection ResultOfMethodCallIgnored
         f.delete();
     }
