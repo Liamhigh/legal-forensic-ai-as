@@ -4,9 +4,17 @@ This document explains how to set up GitHub Actions to build and sign the Androi
 
 ## Overview
 
-The GitHub Actions workflow (`android-build.yml`) automatically builds:
+The repository includes two GitHub Actions workflows for building Android APKs:
+
+### android-build.yml
 - **Debug APK**: Built on every push and pull request
 - **Signed Release APK**: Built on main branch with proper signing keys
+
+### android-release.yml (NEW)
+- **Signed Release APK only**: Optimized for production releases
+- **Triggers**: Manual dispatch via Actions UI or version tags (e.g., `v1.2.3`)
+- **Use case**: Creating official releases for distribution or Play Store submission
+- **Automatic GitHub Releases**: When triggered by version tags, automatically creates a GitHub Release with the APK attached
 
 ## Setting Up Signing Keys
 
@@ -53,24 +61,49 @@ Go to your repository on GitHub:
 
 ### 4. Test the Workflow
 
-Once secrets are configured:
-1. Push to the `main` branch or trigger workflow manually
-2. GitHub Actions will build and sign the APK
-3. Download the signed APK from the Actions artifacts
+Once secrets are configured, you have multiple options:
+
+#### Option 1: Manual Trigger (Recommended for first test)
+1. Go to Actions tab in your GitHub repository
+2. Select "Build & Sign Release APK" workflow
+3. Click "Run workflow" and select the branch
+4. Download the signed APK from the workflow artifacts
+
+#### Option 2: Create a Version Tag
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+This will trigger the workflow and create a GitHub Release automatically.
+
+#### Option 3: Use the existing android-build.yml workflow
+1. Push to the `main` branch
+2. The workflow will build both debug and release APKs
 
 ## Workflow Behavior
 
-### Debug Build
+### android-build.yml Workflow
+
+**Debug Build Job:**
 - **Triggers**: All pushes and pull requests
 - **Output**: `verum-omnis-debug.apk`
 - **Signing**: Debug keystore (automatic)
 - **Use**: Testing and development
 
-### Release Build
+**Release Build Job:**
 - **Triggers**: Pushes to `main` branch or manual dispatch
 - **Output**: `verum-omnis-release.apk` (signed if secrets configured)
 - **Signing**: Your production keystore
 - **Use**: Distribution and Play Store uploads
+
+### android-release.yml Workflow (NEW)
+
+**Release Build Only:**
+- **Triggers**: Manual dispatch or version tags (`v*.*.*`)
+- **Output**: `signed-release-apk` artifact
+- **Signing**: Production keystore (required - will fail if secrets not configured)
+- **GitHub Release**: Automatically created when triggered by version tags
+- **Use**: Official production releases for distribution
 
 ## Verifying Signed APK
 
