@@ -33,6 +33,9 @@ This project now includes a native Android application built with Capacitor!
 The Verum Omnis application can be built as a native Android app that includes:
 - Full AI-powered legal forensics interface
 - Integrated Master Forensic Archive PDF (v5.2.7)
+- **Company Branding**: Dual logo display with professional styling
+- **Watermarked Reports**: Forensic reports with watermark indicators
+- **Password Protection**: Optional password-protected report generation
 - **Cryptographic Document Sealing**: SHA-256 hash sealing for all uploads/downloads
 - **Geolocation Support**: Jurisdiction detection and timestamp accuracy
 - **Constitutional Enforcement Layer**: Standing detection, honesty enforcement, and shutdown logic
@@ -112,6 +115,12 @@ All AI-generated analysis adheres to:
 # Install dependencies
 npm install
 
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
 # Build and sync to Android
 npm run android:build
 
@@ -120,6 +129,8 @@ npm run android:open
 ```
 
 For detailed Android build instructions, see [ANDROID_BUILD.md](./ANDROID_BUILD.md).
+
+For logo and watermark integration details, see [LOGO_WATERMARK_INTEGRATION.md](./LOGO_WATERMARK_INTEGRATION.md).
 
 For signing and automated builds setup, see [SIGNING_SETUP.md](./SIGNING_SETUP.md).
 

@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PDFViewer } from '@/components/PDFViewer'
 import { DocumentUpload } from '@/components/DocumentUpload'
+import { ReportGenerator } from '@/components/ReportGenerator'
 import { SessionStatus } from '@/components/SessionStatus'
 import { getForensicLanguageRules } from '@/services/constitutionalEnforcement'
 import { getCurrentSession, isSessionLocked } from '@/services/authContext'
@@ -116,6 +117,11 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
       <header className="border-b border-border bg-card px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <img 
+              src="/assets/company-logo-1.jpg" 
+              alt="Company Logo 1" 
+              className="h-10 w-10 rounded object-cover"
+            />
             <Scales size={32} weight="duotone" className="text-primary" />
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">
@@ -127,6 +133,11 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <img 
+              src="/assets/company-logo-2.jpg" 
+              alt="Company Logo 2" 
+              className="h-10 w-10 rounded object-cover"
+            />
             <SessionStatus />
             {messageList.length > 0 && (
               <Button
@@ -150,6 +161,9 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
               <div className="space-y-6 mb-6">
                 <PDFViewer />
                 <DocumentUpload />
+                <ReportGenerator 
+                  analysisContent="Sample forensic analysis. Upload a document or start a conversation to generate a real report."
+                />
               </div>
             )}
             {messageList.length === 0 ? (
@@ -232,6 +246,18 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
                       </div>
                     </div>
                   </motion.div>
+                )}
+
+                {/* Show report generator after conversation */}
+                {!isLoading && messageList.length > 0 && (
+                  <div className="mt-6">
+                    <ReportGenerator 
+                      analysisContent={messageList
+                        .filter(m => m.role === 'assistant')
+                        .map(m => m.content)
+                        .join('\n\n---\n\n')}
+                    />
+                  </div>
                 )}
               </div>
             )}
