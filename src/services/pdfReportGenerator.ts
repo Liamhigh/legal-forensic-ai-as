@@ -1,6 +1,31 @@
 /**
  * PDF Report Generator Service
  * Generates forensic reports with watermark and optional password protection
+ * 
+ * SECURITY NOTICE:
+ * This is a demonstration implementation with simplified security features.
+ * For production use, the following enhancements are required:
+ * 
+ * 1. PASSWORD PROTECTION:
+ *    - Replace simple hash with bcrypt/scrypt/PBKDF2
+ *    - Implement proper AES-256-GCM encryption
+ *    - Use secure key derivation functions
+ *    - Add salt generation and storage
+ * 
+ * 2. CONTENT SECURITY:
+ *    - Replace visual obfuscation with real encryption
+ *    - Implement proper PDF encryption standards
+ *    - Use secure random number generation
+ * 
+ * 3. INPUT VALIDATION:
+ *    - Sanitize all user inputs
+ *    - Validate file types and sizes
+ *    - Implement content security policies
+ * 
+ * 4. ERROR HANDLING:
+ *    - Use generic error messages for users
+ *    - Log detailed errors securely
+ *    - Implement proper audit logging
  */
 
 export interface ReportData {
@@ -124,7 +149,12 @@ async function generateReportHash(reportData: ReportData): Promise<string> {
 
 /**
  * Obfuscate report content with password requirement notice
- * In a real implementation, this would encrypt the content
+ * WARNING: This is visual obfuscation only, NOT encryption!
+ * For production use:
+ * - Implement proper encryption (AES-256-GCM)
+ * - Use secure key derivation from password
+ * - Store encrypted content, not obfuscated text
+ * This demonstration replaces characters with blocks for visual effect.
  */
 function obfuscateReport(report: string, password: string): string {
   const lines = report.split('\n')
@@ -160,6 +190,12 @@ function obfuscateReport(report: string, password: string): string {
 
 /**
  * Simple password hash for verification
+ * WARNING: This is a demonstration implementation only!
+ * For production use, implement proper cryptographic hashing with:
+ * - bcrypt, scrypt, or PBKDF2
+ * - Salt generation
+ * - Proper key derivation
+ * This simple hash is vulnerable to collision attacks.
  */
 function hashPassword(password: string): string {
   let hash = 0

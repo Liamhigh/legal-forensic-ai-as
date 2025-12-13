@@ -36,9 +36,12 @@ export function ReportGenerator({ documentData, analysisContent }: ReportGenerat
     setIsGenerating(true)
     
     try {
+      // Sanitize filename to prevent injection attacks
+      const sanitizedFileName = documentData?.fileName.replace(/[<>:"/\\|?*]/g, '_') || 'Unknown'
+      
       const reportData: ReportData = {
         title: documentData?.fileName 
-          ? `Forensic Analysis: ${documentData.fileName}`
+          ? `Forensic Analysis: ${sanitizedFileName}`
           : 'Forensic Analysis Report',
         content: analysisContent,
         documentInfo: documentData,
@@ -73,8 +76,12 @@ export function ReportGenerator({ documentData, analysisContent }: ReportGenerat
       // Reset form
       setPassword('')
     } catch (error) {
+      // Log detailed error for debugging
+      console.error('Report generation error:', error)
+      
+      // Show generic error to user to avoid leaking system information
       toast.error('Failed to generate report', {
-        description: (error as Error).message
+        description: 'An error occurred while generating the report. Please try again.'
       })
     } finally {
       setIsGenerating(false)
