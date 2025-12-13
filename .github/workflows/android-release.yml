@@ -11,6 +11,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed for creating releases and uploading artifacts
     env:
       GRADLE_USER_HOME: ${{ runner.temp }}/gradle-cache
     steps:
