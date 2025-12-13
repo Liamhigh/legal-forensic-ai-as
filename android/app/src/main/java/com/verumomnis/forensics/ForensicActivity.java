@@ -57,6 +57,16 @@ public class ForensicActivity extends AppCompatActivity {
         // Set up button click listener
         Button btnEmail = findViewById(R.id.btn_email);
         btnEmail.setOnClickListener(v -> pickEmail());
+        
+        Button btnBuildCase = findViewById(R.id.btn_build_case);
+        btnBuildCase.setOnClickListener(v -> buildCaseFile());
+        
+        updateSealedFileCount();
+    }
+    
+    private void updateSealedFileCount() {
+        int count = com.verumomnis.forensics.core.CaseFileManager.getSealedFileCount(this);
+        resultText.setText("Sealed files available: " + count);
     }
     
     private void pickEmail() {
@@ -87,6 +97,7 @@ public class ForensicActivity extends AppCompatActivity {
                     "Geo Hash: " + sealed.geoSha.substring(0, 16) + "...\n" +
                     "Blockchain: " + sealed.blockchainTx
                 );
+                updateSealedFileCount();
                 shareFile(sealed.sealedBundle);
             });
         } catch (Exception e) {
@@ -114,5 +125,37 @@ public class ForensicActivity extends AppCompatActivity {
         } catch (Exception e) {
             runOnUiThread(() -> resultText.setText("Share failed: " + e.getMessage()));
         }
+    }
+    
+    private void buildCaseFile() {
+        new Thread(() -> {
+            try {
+                runOnUiThread(() -> {
+                    status.setText("Building final case file…");
+                    resultText.setText("Processing...");
+                });
+                
+                String caseName = "ForensicCase_" + System.currentTimeMillis();
+                String narrative = "Forensic case file containing all sealed evidence.";
+                
+                com.verumomnis.forensics.core.CaseFileManager.FinalCaseFile caseFile = 
+                    com.verumomnis.forensics.core.CaseFileManager.buildFinalCaseFile(this, caseName, narrative);
+                
+                runOnUiThread(() -> {
+                    status.setText("Case file built: " + caseFile.file.getName());
+                    resultText.setText(
+                        "Case file sealed successfully!\n" +
+                        "SHA-512: " + caseFile.sha512.substring(0, 16) + "...\n" +
+                        "Blockchain: " + caseFile.blockchainTx
+                    );
+                    shareFile(caseFile.file);
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    status.setText("Case file build failed");
+                    resultText.setText("Error: " + e.getMessage());
+                });
+            }
+        }).start();
     }
 }
