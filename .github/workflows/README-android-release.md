@@ -41,7 +41,7 @@ Before using this workflow, you **must** configure the following repository secr
 
 | Secret Name | Description | How to Get |
 |-------------|-------------|------------|
-| `KEYSTORE_BASE64` | Your Android keystore file encoded in base64 | `cat my-keystore.jks \| base64 \| tr -d '\n'` |
+| `KEYSTORE_BASE64` | Your Android keystore file encoded in base64 | `cat my-keystore.jks | base64 | tr -d '\n'` |
 | `KEYSTORE_PASSWORD` | Password for the keystore file | The password you set when creating the keystore |
 | `KEY_ALIAS` | Alias of the key within the keystore | The alias you used when creating the key |
 | `KEY_PASSWORD` | Password for the specific key | The key password (often same as keystore password) |
