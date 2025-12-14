@@ -103,18 +103,14 @@ jobs:
 
     - name: Build release APK
       working-directory: ./android
-      env:
-        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
         if [ -f app/keystore.jks ] && [ -s app/keystore.jks ]; then
           echo "Building signed release APK..."
           ./gradlew assembleRelease \
             -Pandroid.injected.signing.store.file=app/keystore.jks \
-            -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
-            -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
-            -Pandroid.injected.signing.key.password=$KEY_PASSWORD
+            -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
         else
           echo "Building unsigned release APK (no keystore found or keystore is empty)..."
           ./gradlew assembleRelease
