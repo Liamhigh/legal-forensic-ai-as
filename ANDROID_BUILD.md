@@ -80,18 +80,27 @@ The Android app includes:
 
 ## Automated Builds with GitHub Actions
 
-The repository includes a GitHub Actions workflow that automatically builds APKs:
+The repository includes two GitHub Actions workflows for automated APK builds:
+
+### android-build.yml - Continuous Integration
 - **Debug APK**: Built on every push and pull request
 - **Signed Release APK**: Built on main branch with signing keys configured
+- **Use**: Development and continuous integration
+
+### android-release.yml - Production Releases
+- **Signed Release APK only**: Optimized for production releases
+- **Triggers**: Manual dispatch or version tags (e.g., `v1.2.3`)
+- **GitHub Releases**: Automatically creates releases when triggered by tags
+- **Use**: Official releases for distribution or Play Store submission
 
 See [SIGNING_SETUP.md](./SIGNING_SETUP.md) for instructions on configuring signing keys.
 
-The workflow:
-1. Builds the web application
-2. Syncs to Android platform
-3. Builds debug/release APK
-4. Uploads as artifacts
-5. Creates GitHub releases (for main branch)
+The workflows:
+1. Build the web application
+2. Sync to Android platform
+3. Build debug/release APK with signing
+4. Upload as artifacts
+5. Create GitHub releases (for version tags or main branch)
 
 ## Building APK/AAB Manually
 
