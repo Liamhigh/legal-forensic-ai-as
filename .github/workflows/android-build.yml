@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only needs read access for debug builds
     
     steps:
     - name: Checkout code
@@ -57,6 +59,8 @@ jobs:
     runs-on: ubuntu-latest
     # Only build release on main branch or manual dispatch
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write  # Needs write access for creating releases
     
     steps:
     - name: Checkout code
@@ -89,32 +93,35 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x android/gradlew
 
-    # Decode keystore from secrets
+    # Build release APK (signed if keystore secrets are available, unsigned otherwise)
     - name: Decode Keystore
-      if: ${{ secrets.KEYSTORE_BASE64 }}
+      continue-on-error: true
       run: |
-        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
+        if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+          echo "Decoding keystore..."
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
+        else
+          echo "No keystore secret found, will build unsigned APK"
+        fi
 
-    # Build signed release APK
-    - name: Build signed release APK
-      if: ${{ secrets.KEYSTORE_BASE64 }}
+    - name: Build release APK
       working-directory: ./android
       env:
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
-        ./gradlew assembleRelease \
-          -Pandroid.injected.signing.store.file=app/keystore.jks \
-          -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
-          -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
-          -Pandroid.injected.signing.key.password=$KEY_PASSWORD
-
-    # Build unsigned release if no keystore
-    - name: Build unsigned release APK
-      if: ${{ !secrets.KEYSTORE_BASE64 }}
-      working-directory: ./android
-      run: ./gradlew assembleRelease
+        if [ -f app/keystore.jks ]; then
+          echo "Building signed release APK..."
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=app/keystore.jks \
+            -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
+            -Pandroid.injected.signing.key.password=$KEY_PASSWORD
+        else
+          echo "Building unsigned release APK (no keystore found)..."
+          ./gradlew assembleRelease
+        fi
 
     - name: Upload release APK
       uses: actions/upload-artifact@v4
