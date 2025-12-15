@@ -3,8 +3,16 @@
 buildscript {
     
     repositories {
-        google()
+        google {
+            content {
+                includeGroupByRegex "com\\.android.*"
+                includeGroupByRegex "com\\.google.*"
+                includeGroupByRegex "androidx.*"
+            }
+        }
         mavenCentral()
+        // Add JitPack as fallback
+        maven { url 'https://jitpack.io' }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.7.2'
@@ -19,8 +27,16 @@ apply from: "variables.gradle"
 
 allprojects {
     repositories {
-        google()
+        google {
+            content {
+                includeGroupByRegex "com\\.android.*"
+                includeGroupByRegex "com\\.google.*"
+                includeGroupByRegex "androidx.*"
+            }
+        }
         mavenCentral()
+        // Add JitPack as fallback
+        maven { url 'https://jitpack.io' }
     }
 }
 
