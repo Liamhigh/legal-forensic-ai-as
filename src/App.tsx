@@ -1,24 +1,31 @@
 import { useState, useEffect, useRef } from 'react'
-import { useKV } from '@github/spark/hooks'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Scales, PaperPlaneRight, Trash } from '@phosphor-icons/react'
+import { Scales, Trash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PDFViewer } from '@/components/PDFViewer'
-import { DocumentUpload } from '@/components/DocumentUpload'
-import { ReportGenerator } from '@/components/ReportGenerator'
+import { UnifiedInput } from '@/components/UnifiedInput'
+import { ChatMessageComponent, type ChatMessage } from '@/components/ChatMessage'
+import { CaseExport } from '@/components/CaseExport'
 import { SessionStatus } from '@/components/SessionStatus'
 import { getForensicLanguageRules } from '@/services/constitutionalEnforcement'
 import { isSessionLocked } from '@/services/authContext'
-
-interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: number
-}
+import { detectIntent, IntentType, shouldSealContent } from '@/services/intentDetection'
+import { sealDocument } from '@/services/documentSealing'
+import { 
+  generateNineBrainAnalysis, 
+  generateForensicCertificate 
+} from '@/services/forensicCertificate'
+import {
+  getCurrentCase,
+  addEvidence,
+  addCertificate,
+  addConversationEntry,
+  clearCase,
+  generateBundleHash,
+  type EvidenceArtifact,
+  type ForensicCertificate
+} from '@/services/caseManagement'
 
 const SUGGESTED_PROMPTS = [
   "Analyze the admissibility of digital evidence in this case",
@@ -28,13 +35,10 @@ const SUGGESTED_PROMPTS = [
 ]
 
 function App() {
-  const [messages, setMessages] = useKV<Message[]>('chat-messages', [])
-  const [input, setInput] = useState('')
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [currentCase, setCurrentCase] = useState(() => getCurrentCase())
   const scrollRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const messageList = messages || []
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -42,9 +46,25 @@ function App() {
     }
   }, [messages])
 
-  const handleSend = async (content?: string) => {
-    const messageContent = content || input.trim()
-    if (!messageContent || isLoading) return
+  // Initialize case on mount
+  useEffect(() => {
+    const caseData = getCurrentCase()
+    setCurrentCase(caseData)
+    
+    // Show welcome message
+    if (messages.length === 0) {
+      const welcomeMessage: ChatMessage = {
+        id: 'welcome',
+        role: 'system',
+        content: '✅ Case session started. Evidence will be automatically sealed and added to your case.',
+        timestamp: Date.now()
+      }
+      setMessages([welcomeMessage])
+    }
+  }, [])
+
+  const handleSubmit = async (message: string, files?: File[]) => {
+    if ((!message && !files) || isLoading) return
 
     // Check if session is locked
     if (isSessionLocked()) {
@@ -54,67 +74,258 @@ function App() {
       return
     }
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: messageContent,
-      timestamp: Date.now(),
+    // Detect intent
+    const intent = detectIntent(message, !!files && files.length > 0)
+    const shouldSeal = shouldSealContent(intent)
+
+    // Handle file uploads (evidence)
+    if (files && files.length > 0) {
+      for (const file of files) {
+        await handleEvidenceUpload(file, message)
+      }
+      
+      // If there's no message, just return after processing files
+      if (!message) return
     }
 
-    setMessages((current) => [...(current || []), userMessage])
-    setInput('')
+    // Add user message
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: message,
+      timestamp: Date.now(),
+      sealed: shouldSeal
+    }
+
+    setMessages((current) => [...current, userMessage])
+    
+    // Add to conversation log
+    addConversationEntry('user', message, shouldSeal)
+    
     setIsLoading(true)
 
     try {
       // Get forensic language enforcement rules
       const forensicRules = getForensicLanguageRules()
       
-      const prompt = (window as any).spark.llmPrompt`You are Verum Omnis, the world's first AI-powered legal forensics assistant. You help legal professionals analyze evidence, research case law, and construct compelling arguments.
+      // Adjust system prompt based on intent
+      let systemPrompt = ''
+      if (intent === IntentType.FORENSIC_OUTPUT) {
+        systemPrompt = `You are Verum Omnis, a forensic legal assistant. The user is requesting you to draft or generate a legal document.
 
 ${forensicRules}
 
-User query: ${messageContent}
+CRITICAL: Your response should contain ONLY the requested document content. Do NOT add:
+- Follow-up questions
+- Suggestions
+- Commentary
+- "Would you like me to..."
+- Any additional text outside the document itself
 
-Provide a thorough forensic analysis with specific legal considerations, adhering strictly to the constitutional enforcement constraints above.`
+Generate a clean, professional document that can be immediately sealed and used.
 
-      const response = await (window as any).spark.llm(prompt, 'gpt-4o')
+User request: ${message}`
+      } else {
+        systemPrompt = `You are Verum Omnis, the world's first AI-powered legal forensics assistant. You help legal professionals analyze evidence, research case law, and construct compelling arguments.
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: response,
-        timestamp: Date.now(),
+${forensicRules}
+
+This is a conversational discussion. Provide helpful analysis and guidance.
+
+User query: ${message}
+
+Provide a thorough forensic analysis with specific legal considerations.`
       }
 
-      setMessages((current) => [...(current || []), assistantMessage])
+      const prompt = (window as any).spark.llmPrompt`${systemPrompt}`
+      const response = await (window as any).spark.llm(prompt, 'gpt-4o')
+
+      // For forensic output, seal the response
+      if (shouldSeal) {
+        await handleForensicOutput(response, message)
+      } else {
+        // Normal conversation - just add assistant message
+        const assistantMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: response,
+          timestamp: Date.now(),
+          sealed: false
+        }
+
+        setMessages((current) => [...current, assistantMessage])
+        addConversationEntry('assistant', response, false)
+      }
     } catch (error) {
       toast.error('Failed to get response. Please try again.')
       console.error('Error:', error)
     } finally {
       setIsLoading(false)
-      inputRef.current?.focus()
+    }
+  }
+
+  const handleEvidenceUpload = async (file: File, userMessage?: string) => {
+    try {
+      // Read file content
+      const isTextFile = file.type.startsWith('text/') || 
+                         file.name.endsWith('.txt') || 
+                         file.name.endsWith('.md')
+      const content = isTextFile ? await file.text() : await file.arrayBuffer()
+
+      // Seal the evidence
+      const sealed = await sealDocument(content, file.name)
+      
+      // Generate Nine-Brain analysis
+      const nineBrainAnalysis = await generateNineBrainAnalysis(
+        file.name,
+        content,
+        file.type,
+        sealed.seal.documentHash
+      )
+
+      // Create evidence artifact
+      const evidenceArtifact: EvidenceArtifact = {
+        id: `EVD-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
+        fileName: file.name,
+        content: sealed.originalContent,
+        evidenceHash: sealed.seal.documentHash,
+        timestamp: sealed.seal.timestamp,
+        jurisdiction: sealed.seal.jurisdiction
+      }
+
+      // Add evidence to case
+      addEvidence(evidenceArtifact)
+
+      // Generate forensic certificate
+      const certificateContent = await generateForensicCertificate(
+        evidenceArtifact.id,
+        file.name,
+        sealed.seal.documentHash,
+        nineBrainAnalysis,
+        sealed.seal.jurisdiction
+      )
+
+      // Hash the certificate
+      const encoder = new TextEncoder()
+      const certData = encoder.encode(certificateContent)
+      const certHashBuffer = await crypto.subtle.digest('SHA-256', certData)
+      const certHashArray = Array.from(new Uint8Array(certHashBuffer))
+      const certificateHash = certHashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+      // Generate bundle hash
+      const bundleHash = await generateBundleHash(
+        sealed.seal.documentHash,
+        certificateHash,
+        { 
+          timestamp: sealed.seal.timestamp, 
+          jurisdiction: sealed.seal.jurisdiction 
+        }
+      )
+
+      // Create certificate artifact
+      const certificateArtifact: ForensicCertificate = {
+        id: `CERT-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
+        evidenceId: evidenceArtifact.id,
+        certificateHash,
+        nineBrainAnalysis: certificateContent,
+        timestamp: Date.now(),
+        bundleHash
+      }
+
+      // Add certificate to case
+      addCertificate(certificateArtifact)
+
+      // Update current case state
+      setCurrentCase(getCurrentCase())
+
+      // Add system message confirming sealing
+      const systemMessage: ChatMessage = {
+        id: `sys-${Date.now()}`,
+        role: 'system',
+        content: '✅ Evidence sealed and added to case',
+        timestamp: Date.now(),
+        evidenceSealed: {
+          fileName: file.name,
+          hash: sealed.seal.documentHash,
+          certificateGenerated: true
+        }
+      }
+
+      setMessages((current) => [...current, systemMessage])
+
+    } catch (error) {
+      console.error('Error processing evidence:', error)
+      toast.error('Failed to seal evidence', {
+        description: (error as Error).message
+      })
+    }
+  }
+
+  const handleForensicOutput = async (content: string, originalRequest: string) => {
+    try {
+      // This is a drafted document - seal it
+      const sealed = await sealDocument(content, `draft_${Date.now()}.txt`)
+
+      // Add sealed document to case as conversation entry
+      addConversationEntry('assistant', content, true)
+
+      // Show assistant message with seal indicator
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: content,
+        timestamp: Date.now(),
+        sealed: true
+      }
+
+      setMessages((current) => [...current, assistantMessage])
+
+      // Add system confirmation
+      const systemMessage: ChatMessage = {
+        id: `sys-${Date.now()}`,
+        role: 'system',
+        content: '✅ Sealed document generated and added to case',
+        timestamp: Date.now()
+      }
+
+      setMessages((current) => [...current, systemMessage])
+
+    } catch (error) {
+      console.error('Error sealing output:', error)
+      
+      // Still show the content but without sealing
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: content,
+        timestamp: Date.now(),
+        sealed: false
+      }
+
+      setMessages((current) => [...current, assistantMessage])
+      addConversationEntry('assistant', content, false)
+
+      toast.error('Document generated but sealing failed')
     }
   }
 
   const handleClear = () => {
-    setMessages([])
-    toast.success('Conversation cleared')
+    if (confirm('Are you sure you want to clear this case? This will start a new case session.')) {
+      clearCase()
+      setMessages([])
+      setCurrentCase(getCurrentCase())
+      toast.success('Case cleared - new session started')
+    }
   }
 
   const handlePromptClick = (prompt: string) => {
-    handleSend(prompt)
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
+    handleSubmit(prompt)
   }
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <header className="border-b border-border bg-card px-6 py-4">
+      {/* Header */}
+      <header className="border-b border-border bg-card px-6 py-4 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
@@ -128,7 +339,7 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
                 Verum Omnis
               </h1>
               <p className="text-xs text-muted-foreground">
-                AI Forensics Assistant
+                Case {currentCase.caseId.substring(5, 13)}
               </p>
             </div>
           </div>
@@ -139,7 +350,8 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
               className="h-10 w-10 rounded object-cover"
             />
             <SessionStatus />
-            {messageList.length > 0 && (
+            <CaseExport />
+            {messages.length > 1 && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -154,19 +366,11 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
         </div>
       </header>
 
+      {/* Main Chat Area */}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div ref={scrollRef} className="max-w-3xl mx-auto px-6 py-6">
-            {messageList.length === 0 && (
-              <div className="space-y-6 mb-6">
-                <PDFViewer />
-                <DocumentUpload />
-                <ReportGenerator 
-                  analysisContent="Sample forensic analysis. Upload a document or start a conversation to generate a real report."
-                />
-              </div>
-            )}
-            {messageList.length === 0 ? (
+            {messages.length === 0 || (messages.length === 1 && messages[0].id === 'welcome') ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -177,8 +381,8 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
                   Welcome to Verum Omnis
                 </h2>
                 <p className="text-base text-muted-foreground mb-8 max-w-2xl leading-relaxed">
-                  Your AI assistant for legal forensics. Ask questions about evidence analysis, 
-                  case law research, or forensic procedures.
+                  Your forensic thinking partner. Add evidence, ask questions, or request documents.
+                  Everything is automatically sealed and added to your case.
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center max-w-3xl">
                   {SUGGESTED_PROMPTS.map((prompt, index) => (
@@ -197,37 +401,15 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
             ) : (
               <div className="space-y-4">
                 <AnimatePresence>
-                  {messageList.map((message) => (
+                  {messages.map((message) => (
                     <motion.div
                       key={message.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      className={`flex ${
-                        message.role === 'user' ? 'justify-end' : 'justify-start'
-                      }`}
                     >
-                      <div
-                        className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${
-                          message.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-card border border-border text-card-foreground'
-                        }`}
-                      >
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                          {message.content}
-                        </p>
-                        <p
-                          className={`text-xs mt-2 ${
-                            message.role === 'user'
-                              ? 'text-primary-foreground/70'
-                              : 'text-muted-foreground'
-                          }`}
-                        >
-                          {new Date(message.timestamp).toLocaleTimeString()}
-                        </p>
-                      </div>
+                      <ChatMessageComponent message={message} />
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -238,7 +420,7 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
                     animate={{ opacity: 1, y: 0 }}
                     className="flex justify-start"
                   >
-                    <div className="bg-card border border-border rounded-lg px-4 py-3">
+                    <div className="bg-card border border-border rounded-2xl px-4 py-3">
                       <div className="flex gap-1">
                         <span className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" />
                         <span className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse delay-75" />
@@ -247,44 +429,20 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
                     </div>
                   </motion.div>
                 )}
-
-                {/* Show report generator after conversation */}
-                {!isLoading && messageList.length > 0 && (
-                  <div className="mt-6">
-                    <ReportGenerator 
-                      analysisContent={messageList
-                        .filter(m => m.role === 'assistant')
-                        .map(m => m.content)
-                        .join('\n\n---\n\n')}
-                    />
-                  </div>
-                )}
               </div>
             )}
           </div>
         </ScrollArea>
       </div>
 
-      <div className="border-t border-border bg-card px-6 py-4">
+      {/* Input Area */}
+      <div className="border-t border-border bg-card px-6 py-4 flex-shrink-0">
         <div className="max-w-3xl mx-auto">
-          <div className="flex gap-2">
-            <Input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder="Ask about evidence, case law, or forensic procedures..."
-              disabled={isLoading}
-              className="flex-1 bg-background border-input focus-visible:ring-accent rounded-xl"
-            />
-            <Button
-              onClick={() => handleSend()}
-              disabled={!input.trim() || isLoading}
-              className="bg-accent text-accent-foreground hover:bg-accent/90 transition-all active:scale-95 rounded-xl"
-            >
-              <PaperPlaneRight size={20} weight="fill" />
-            </Button>
-          </div>
+          <UnifiedInput
+            onSubmit={handleSubmit}
+            disabled={isLoading}
+            placeholder="Add evidence or ask a question..."
+          />
         </div>
       </div>
     </div>
