@@ -205,7 +205,7 @@ export async function verifySeal(sealedContent: string): Promise<{
  */
 export async function sealDocument(
   content: string | ArrayBuffer,
-  fileName: string
+  _fileName: string
 ): Promise<SealedDocument> {
   // Check if already sealed
   const contentStr = typeof content === 'string' ? content : new TextDecoder().decode(content)

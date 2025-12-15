@@ -12,7 +12,6 @@ import {
   getCurrentSession, 
   authenticateInstitutionalUser, 
   logout,
-  initializePublicSession,
   isSessionLocked
 } from '@/services/authContext'
 import { toast } from 'sonner'

@@ -253,8 +253,8 @@ npm run android:open
 
 2. **Verify SDK Versions**:
    - Open `android/app/build.gradle`
-   - Verify `compileSdk 34` and `targetSdk 34`
-   - Verify `minSdk 22` (supports Android 5.1+)
+   - Verify `compileSdk 35` and `targetSdk 35`
+   - Verify `minSdk 23` (supports Android 6.0+)
 
 3. **Check Capacitor Plugins**:
    - Open `MainActivity.java`

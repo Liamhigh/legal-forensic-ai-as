@@ -11,7 +11,7 @@ import { DocumentUpload } from '@/components/DocumentUpload'
 import { ReportGenerator } from '@/components/ReportGenerator'
 import { SessionStatus } from '@/components/SessionStatus'
 import { getForensicLanguageRules } from '@/services/constitutionalEnforcement'
-import { getCurrentSession, isSessionLocked } from '@/services/authContext'
+import { isSessionLocked } from '@/services/authContext'
 
 interface Message {
   id: string
