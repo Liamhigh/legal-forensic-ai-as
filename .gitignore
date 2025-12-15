@@ -38,6 +38,16 @@ android/build/
 android/app/build/
 android/.gradle/
 android/local.properties
-android/.idea/
+# Keep some .idea files for Android Studio, but ignore user-specific ones
+android/.idea/workspace.xml
+android/.idea/tasks.xml
+android/.idea/gradle.xml
+android/.idea/assetWizardSettings.xml
+android/.idea/dictionaries
+android/.idea/libraries
+android/.idea/caches
+android/.idea/modules.xml
+android/.idea/navEditor.xml
+android/.idea/*.iml
 android/*.iml
 android/captures/
