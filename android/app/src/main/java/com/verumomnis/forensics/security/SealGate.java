@@ -107,7 +107,7 @@ public class SealGate {
     
     /**
      * Calculate device-bound HMAC-SHA512 for chain-of-custody
-     * Uses Android device ID as the key to bind hash to this specific device
+     * Uses Android device ID with PBKDF2 key derivation for enhanced security
      */
     private static String calculateDeviceHMAC(Context ctx, File file) throws Exception {
         // Get device-specific ID (secure and unique to this device)
@@ -116,9 +116,21 @@ public class SealGate {
             Settings.Secure.ANDROID_ID
         );
         
-        // Use HMAC-SHA512 with device ID as key
+        // Derive a secure key from device ID using PBKDF2
+        // This prevents predictable keys and enhances security
+        javax.crypto.SecretKeyFactory factory = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
+        byte[] salt = "VerumOmnisForensicSalt_v5.2.7".getBytes("UTF-8");
+        javax.crypto.spec.PBEKeySpec spec = new javax.crypto.spec.PBEKeySpec(
+            deviceId.toCharArray(), 
+            salt, 
+            10000,  // Iteration count
+            512     // Key length (bits)
+        );
+        byte[] derivedKey = factory.generateSecret(spec).getEncoded();
+        
+        // Use HMAC-SHA512 with derived key
         Mac hmac = Mac.getInstance("HmacSHA512");
-        SecretKeySpec keySpec = new SecretKeySpec(deviceId.getBytes("UTF-8"), "HmacSHA512");
+        SecretKeySpec keySpec = new SecretKeySpec(derivedKey, "HmacSHA512");
         hmac.init(keySpec);
         
         try (InputStream fis = new FileInputStream(file)) {

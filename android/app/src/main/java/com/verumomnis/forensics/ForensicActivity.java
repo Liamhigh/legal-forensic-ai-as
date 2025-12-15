@@ -32,6 +32,9 @@ import java.util.List;
  */
 public class ForensicActivity extends AppCompatActivity {
     
+    // Display constants
+    private static final int HASH_DISPLAY_LENGTH = 16;
+    
     private TextView status;
     private TextView resultText;
     private Spinner jurisdictionSpinner;
@@ -159,9 +162,9 @@ public class ForensicActivity extends AppCompatActivity {
                 status.setText("✓ E-mail sealed: " + sealed.sealedBundle.getName());
                 resultText.setText(
                     "Sealed successfully!\n\n" +
-                    "Public SHA-512: " + sealed.sha512Public.substring(0, 16) + "...\n" +
-                    "Device HMAC-SHA512: " + sealed.hmacSha512Device.substring(0, 16) + "...\n" +
-                    "Geo Hash: " + sealed.geoSha.substring(0, 16) + "...\n" +
+                    "Public SHA-512: " + sealed.sha512Public.substring(0, HASH_DISPLAY_LENGTH) + "...\n" +
+                    "Device HMAC-SHA512: " + sealed.hmacSha512Device.substring(0, HASH_DISPLAY_LENGTH) + "...\n" +
+                    "Geo Hash: " + sealed.geoSha.substring(0, HASH_DISPLAY_LENGTH) + "...\n" +
                     "Blockchain: " + sealed.blockchainTx + "\n" +
                     "Jurisdiction: " + selectedJurisdictionCode
                 );
@@ -225,7 +228,7 @@ public class ForensicActivity extends AppCompatActivity {
                     status.setText("✓ Case file built: " + caseFile.file.getName());
                     resultText.setText(
                         "Case file sealed successfully!\n\n" +
-                        "SHA-512: " + caseFile.sha512.substring(0, 16) + "...\n" +
+                        "SHA-512: " + caseFile.sha512.substring(0, HASH_DISPLAY_LENGTH) + "...\n" +
                         "Blockchain: " + caseFile.blockchainTx + "\n" +
                         "Jurisdiction: " + selectedJurisdictionCode
                     );

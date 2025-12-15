@@ -1,5 +1,7 @@
 package com.verumomnis.forensics.analysis;
 
+import com.verumomnis.forensics.core.ForensicVersion;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -42,8 +44,10 @@ public class DeterministicAnalysisEngine {
     
     private static String getModelHash() {
         try {
+            // Use the constitutional version for consistency
+            String ruleVersion = "DETERMINISTIC_RULE_ENGINE_" + ForensicVersion.ENGINE_VERSION;
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = digest.digest("RULE_ENGINE_v5.2.7".getBytes("UTF-8"));
+            byte[] hashBytes = digest.digest(ruleVersion.getBytes("UTF-8"));
             StringBuilder sb = new StringBuilder();
             for (byte b : hashBytes) sb.append(String.format("%02x", b));
             return sb.toString();
