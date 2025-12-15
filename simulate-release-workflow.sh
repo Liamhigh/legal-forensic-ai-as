@@ -349,7 +349,7 @@ if [ -z "$KEYSTORE_BASE64" ]; then
                         ;;
                 esac
             done < android/signing.properties
-            # Re-read the variables after sourcing
+            # Re-read the variables after parsing properties file
             KEYSTORE_PASSWORD="${KEYSTORE_PASSWORD:-}"
             KEY_ALIAS="${KEY_ALIAS:-}"
             KEY_PASSWORD="${KEY_PASSWORD:-}"
