@@ -165,13 +165,18 @@ if command -v java &> /dev/null; then
     print_success "Java installed: $JAVA_VERSION"
     
     # Extract major version
+    # Handles multiple formats:
+    # - Modern: "17.0.17" or "11.0.12"
+    # - Legacy: "1.8.0_292" (Java 8)
+    # - OpenJDK: "openjdk version "17.0.17" 2025-10-21"
     if echo "$JAVA_VERSION" | grep -q "version"; then
-        # Extract version number (handles formats like "11.0.1", "1.8.0", "17.0.17")
+        # Extract the version number from quotes (e.g., "17.0.17" -> 17)
         JAVA_MAJOR=$(echo "$JAVA_VERSION" | sed -n 's/.*version "\([0-9]*\)\..*/\1/p' | head -1)
-        # Handle older Java versions like 1.8 -> 8
+        # Handle older Java versions like "1.8.0" -> 8
         if [ "$JAVA_MAJOR" = "1" ]; then
             JAVA_MAJOR=$(echo "$JAVA_VERSION" | sed -n 's/.*version "1\.\([0-9]*\).*/\1/p' | head -1)
         fi
+        # Verify we got a valid number before comparison
         if [ -n "$JAVA_MAJOR" ] && [ "$JAVA_MAJOR" -ge 17 ] 2>/dev/null; then
             print_success "Java version is 17 or higher"
         elif [ -n "$JAVA_MAJOR" ]; then
@@ -324,10 +329,21 @@ if [ -z "$KEYSTORE_BASE64" ]; then
         if [ -f "android/signing.properties" ]; then
             print_info "Found android/signing.properties"
             echo "   Attempting to load signing credentials..."
-            # Source the properties if they're in shell format
-            if grep -q "=" android/signing.properties; then
-                source android/signing.properties 2>/dev/null || true
-            fi
+            # Safely parse properties file (avoid executing arbitrary code)
+            while IFS='=' read -r key value; do
+                # Skip comments and empty lines
+                [[ "$key" =~ ^[[:space:]]*# ]] && continue
+                [[ -z "$key" ]] && continue
+                # Remove leading/trailing whitespace
+                key=$(echo "$key" | xargs)
+                value=$(echo "$value" | xargs)
+                # Export known safe variables only
+                case "$key" in
+                    KEYSTORE_PASSWORD|KEY_ALIAS|KEY_PASSWORD)
+                        export "$key=$value"
+                        ;;
+                esac
+            done < android/signing.properties
         fi
     else
         print_info "No local keystore found at android/app/keystore.jks"
@@ -336,15 +352,26 @@ else
     print_success "KEYSTORE_BASE64 is set"
     print_info "Decoding keystore..."
     
-    # Decode keystore
-    echo "$KEYSTORE_BASE64" | base64 -d > android/app/keystore.jks 2>/dev/null
-    if [ $? -eq 0 ]; then
-        print_success "Keystore decoded successfully"
-        KEYSTORE_FILE="app/keystore.jks"
+    # Decode keystore (check for errors)
+    if echo "$KEYSTORE_BASE64" | base64 -d > android/app/keystore.jks 2>/tmp/keystore-decode-error.txt; then
+        if [ -s android/app/keystore.jks ]; then
+            print_success "Keystore decoded successfully"
+            KEYSTORE_FILE="app/keystore.jks"
+        else
+            print_error "Keystore decode produced empty file"
+            echo "   This would cause signing to fail in CI"
+            if [ -s /tmp/keystore-decode-error.txt ]; then
+                echo "   Error: $(cat /tmp/keystore-decode-error.txt)"
+            fi
+        fi
     else
         print_error "Failed to decode keystore"
         echo "   This would cause signing to fail in CI"
+        if [ -s /tmp/keystore-decode-error.txt ]; then
+            echo "   Error: $(cat /tmp/keystore-decode-error.txt)"
+        fi
     fi
+    rm -f /tmp/keystore-decode-error.txt
 fi
 
 # Check other signing parameters
@@ -468,13 +495,16 @@ if [ -f "$APK_PATH" ]; then
         fi
         
         if [ -z "$APKSIGNER" ]; then
-            # Try common locations
-            for bt_dir in "$HOME/Android/Sdk/build-tools"/* "$HOME/Library/Android/sdk/build-tools"/*; do
-                if [ -f "$bt_dir/apksigner" ]; then
-                    APKSIGNER="$bt_dir/apksigner"
-                    break
-                fi
-            done
+            # Try common locations with existence checks
+            if [ -n "$HOME" ]; then
+                for bt_dir in "$HOME/Android/Sdk/build-tools"/* "$HOME/Library/Android/sdk/build-tools"/*; do
+                    # Check if directory exists and contains apksigner
+                    if [ -d "$bt_dir" ] && [ -f "$bt_dir/apksigner" ]; then
+                        APKSIGNER="$bt_dir/apksigner"
+                        break
+                    fi
+                done
+            fi
         fi
         
         if [ -n "$APKSIGNER" ] && [ -f "$APKSIGNER" ]; then
@@ -547,7 +577,7 @@ print_info "Extracting build information..."
 echo ""
 
 # Application ID
-APP_ID=$(grep 'applicationId' app/build.gradle | awk '{print $2}' | tr -d '"' | head -1)
+APP_ID=$(grep -E '^[[:space:]]*applicationId[[:space:]]' app/build.gradle | awk '{print $2}' | tr -d '"' | head -1)
 if [ -n "$APP_ID" ]; then
     echo "Application ID: $APP_ID"
 else
@@ -555,7 +585,7 @@ else
 fi
 
 # Version Name
-VERSION_NAME=$(grep 'versionName' app/build.gradle | awk '{print $2}' | tr -d '"' | head -1)
+VERSION_NAME=$(grep -E '^[[:space:]]*versionName[[:space:]]' app/build.gradle | awk '{print $2}' | tr -d '"' | head -1)
 if [ -n "$VERSION_NAME" ]; then
     echo "Version Name: $VERSION_NAME"
 else
@@ -563,7 +593,7 @@ else
 fi
 
 # Version Code
-VERSION_CODE=$(grep 'versionCode' app/build.gradle | awk '{print $2}' | head -1)
+VERSION_CODE=$(grep -E '^[[:space:]]*versionCode[[:space:]]' app/build.gradle | awk '{print $2}' | head -1)
 if [ -n "$VERSION_CODE" ]; then
     echo "Version Code: $VERSION_CODE"
 else
@@ -606,10 +636,10 @@ else
     echo -e "${YELLOW}⚠️  No signing credentials (diverges from CI with secrets configured)${NC}"
 fi
 
-if [ "$NODE_MAJOR" -ge 18 ]; then
+if [ "$NODE_MAJOR" -ge 18 ] 2>/dev/null; then
     echo -e "${GREEN}✅ Node.js version compatible with CI (18+)${NC}"
 else
-    echo -e "${YELLOW}⚠️  Node.js version differs from CI (local: $NODE_VERSION, CI: 18)${NC}"
+    echo -e "${YELLOW}⚠️  Node.js version differs from CI (local: $NODE_MAJOR, CI: 18)${NC}"
 fi
 
 if [ -n "$ANDROID_HOME" ]; then

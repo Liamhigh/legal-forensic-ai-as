@@ -48,7 +48,16 @@ export KEY_PASSWORD='your-key-password'
 
 To create a base64-encoded keystore:
 ```bash
+# macOS
 base64 -i your-keystore.jks | tr -d '\n' > keystore.base64.txt
+
+# Linux
+base64 your-keystore.jks | tr -d '\n' > keystore.base64.txt
+
+# Windows (Git Bash)
+base64 -w 0 your-keystore.jks > keystore.base64.txt
+
+# Then set the environment variable
 export KEYSTORE_BASE64=$(cat keystore.base64.txt)
 ```
 
