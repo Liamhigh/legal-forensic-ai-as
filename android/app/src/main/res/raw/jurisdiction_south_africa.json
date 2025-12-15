@@ -1,0 +1,23 @@
+{
+  "code": "ZA",
+  "name": "South Africa",
+  "legal_system": "Mixed Legal System (Roman-Dutch Civil Law and English Common Law)",
+  "authorities": [
+    "Electronic Communications and Transactions Act, 2002 (ECTA)",
+    "Cybercrimes Act, 2020",
+    "Criminal Procedure Act 51 of 1977",
+    "Protection of Personal Information Act, 2013 (POPIA)"
+  ],
+  "evidence_standards": {
+    "digital_evidence_admissible": true,
+    "chain_of_custody_required": true,
+    "expert_testimony_required": true,
+    "hash_algorithm_required": "SHA-512",
+    "timestamp_required": true
+  },
+  "data_retention": {
+    "minimum_days": 365,
+    "maximum_days": 3650
+  },
+  "notes": "Digital evidence admissible under ECTA. Chain of custody and expert testimony required for authentication."
+}

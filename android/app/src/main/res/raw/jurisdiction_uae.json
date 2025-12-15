@@ -1,0 +1,22 @@
+{
+  "code": "UAE",
+  "name": "United Arab Emirates",
+  "legal_system": "Civil Law with Islamic Law influences",
+  "authorities": [
+    "UAE Federal Law No. 5 of 2012 on Combating Cybercrimes",
+    "UAE Federal Law No. 1 of 2006 on Electronic Transactions",
+    "UAE Federal Law No. 11 of 2008 on Evidence in Civil and Commercial Transactions"
+  ],
+  "evidence_standards": {
+    "digital_evidence_admissible": true,
+    "chain_of_custody_required": true,
+    "expert_testimony_required": true,
+    "hash_algorithm_required": "SHA-512",
+    "timestamp_required": true
+  },
+  "data_retention": {
+    "minimum_days": 1095,
+    "maximum_days": -1
+  },
+  "notes": "Digital evidence must be authenticated by certified forensic experts. Chain of custody must be maintained from collection to presentation."
+}
