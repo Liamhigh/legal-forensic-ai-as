@@ -60,6 +60,8 @@ Once secrets are configured:
 
 ## Workflow Behavior
 
+The GitHub Actions workflow automatically detects whether signing secrets are configured and builds the appropriate APK type.
+
 ### Debug Build
 - **Triggers**: All pushes and pull requests
 - **Output**: `verum-omnis-debug.apk`
@@ -68,9 +70,11 @@ Once secrets are configured:
 
 ### Release Build
 - **Triggers**: Pushes to `main` branch or manual dispatch
-- **Output**: `verum-omnis-release.apk` (signed if secrets configured)
-- **Signing**: Your production keystore
-- **Use**: Distribution and Play Store uploads
+- **Output**: `verum-omnis-release.apk`
+- **Signing**: 
+  - **Signed APK**: Built when `KEYSTORE_BASE64` and related secrets are configured
+  - **Unsigned APK**: Built when secrets are not configured (for testing workflow)
+- **Use**: Distribution and Play Store uploads (signed APK only)
 
 ## Verifying Signed APK
 
@@ -97,7 +101,7 @@ cd android
   -Pandroid.injected.signing.key.password=YOUR_KEY_PASSWORD
 ```
 
-Or configure `android/app/build.gradle` with a signing config.
+The `android/app/build.gradle` file is already configured to use these injected signing properties automatically when provided.
 
 ## Security Best Practices
 
