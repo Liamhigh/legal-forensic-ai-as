@@ -91,18 +91,20 @@ jobs:
 
     # Decode keystore from secrets
     - name: Decode Keystore
-      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+      if: ${{ secrets.KEYSTORE_BASE64 }}
       run: |
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
 
     # Build signed release APK
     - name: Build signed release APK
-      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+      if: ${{ secrets.KEYSTORE_BASE64 }}
       working-directory: ./android
       env:
+        KEYSTORE_FILE: app/keystore.jks
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        REQUIRE_SIGNED_RELEASE: "true"
       run: |
         ./gradlew assembleRelease \
           -Pandroid.injected.signing.store.file=app/keystore.jks \
@@ -110,11 +112,28 @@ jobs:
           -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
           -Pandroid.injected.signing.key.password=$KEY_PASSWORD
 
-    # Build unsigned release if no keystore
+    # Verify APK signature (CRITICAL - ensures APK is actually signed)
+    - name: Verify APK signature
+      if: ${{ secrets.KEYSTORE_BASE64 }}
+      run: |
+        # Find the latest apksigner
+        APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -V | tail -n 1)
+        if [ -z "$APKSIGNER" ]; then
+          echo "❌ apksigner not found in Android SDK"
+          exit 1
+        fi
+        echo "Using apksigner: $APKSIGNER"
+        $APKSIGNER verify --print-certs android/app/build/outputs/apk/release/app-release.apk
+
+    # Build unsigned release if no keystore (DEBUG ONLY)
     - name: Build unsigned release APK
-      if: ${{ secrets.KEYSTORE_BASE64 == '' }}
+      if: ${{ !secrets.KEYSTORE_BASE64 }}
       working-directory: ./android
       run: ./gradlew assembleRelease
+
+    - name: Confirm release APK
+      run: |
+        ls -lh android/app/build/outputs/apk/release/
 
     - name: Upload release APK
       uses: actions/upload-artifact@v4
