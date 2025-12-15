@@ -9,11 +9,26 @@
         android:id="@+id/status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Forensic Email Sealing"
+        android:text="Verum Omnis Forensic Engine v5.2.7"
         android:textSize="18sp"
         android:textStyle="bold"
         android:padding="16dp"
         android:gravity="center" />
+    
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="JURISDICTION (Required)"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp" />
+    
+    <Spinner
+        android:id="@+id/jurisdiction_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp" />
 
     <Button
         android:id="@+id/btn_email"
