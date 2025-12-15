@@ -140,13 +140,13 @@ jobs:
     
     # Decode keystore from secrets
     - name: Decode Keystore
-      if: secrets.KEYSTORE_BASE64 != ''
+      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
       run: |
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
 
     # Build signed release APK
     - name: Build signed release APK
-      if: secrets.KEYSTORE_BASE64 != ''
+      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
       working-directory: ./android
       env:
         KEYSTORE_FILE: app/keystore.jks
@@ -163,7 +163,7 @@ jobs:
 
     # Verify APK signature (CRITICAL - ensures APK is actually signed)
     - name: Verify APK signature with apksigner
-      if: secrets.KEYSTORE_BASE64 != ''
+      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
       run: |
         # Find the latest apksigner
         APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -V | tail -n 1)
@@ -189,7 +189,7 @@ jobs:
 
     # Build unsigned release if no keystore (NON-MAIN BRANCHES ONLY)
     - name: Build unsigned release APK (development only)
-      if: secrets.KEYSTORE_BASE64 == '' && github.ref != 'refs/heads/main'
+      if: ${{ secrets.KEYSTORE_BASE64 == '' && github.ref != 'refs/heads/main' }}
       working-directory: ./android
       run: |
         echo "⚠️  WARNING: Building unsigned APK (development/testing only)"
