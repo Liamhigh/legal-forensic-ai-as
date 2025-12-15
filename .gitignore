@@ -59,3 +59,7 @@ android/captures/
 # Large PDF files - move to assets or external storage
 /*.PDF
 /*.pdf
+
+# But allow PDFs in public/pdfs directory
+!public/pdfs/*.PDF
+!public/pdfs/*.pdf
