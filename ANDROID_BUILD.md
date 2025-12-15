@@ -5,8 +5,9 @@ This guide explains how to build the Verum Omnis Android application.
 ## Prerequisites
 
 - Node.js (v18 or higher)
-- Android Studio (for building and running the app)
+- Android Studio (latest version recommended)
 - Java Development Kit (JDK) 11 or higher
+- Android SDK (typically installed with Android Studio)
 
 ## Setup
 
@@ -15,12 +16,29 @@ This guide explains how to build the Verum Omnis Android application.
    npm install
    ```
 
-2. **Build the web application**
+2. **Configure Android SDK Path**
+   
+   Create a `local.properties` file in the `android` directory:
+   
+   ```bash
+   cd android
+   cp local.properties.template local.properties
+   ```
+   
+   Then edit `android/local.properties` and set the correct SDK path for your system:
+   
+   - **Windows**: `sdk.dir=C\:\\Users\\YourUsername\\AppData\\Local\\Android\\Sdk`
+   - **Mac**: `sdk.dir=/Users/YourUsername/Library/Android/sdk`
+   - **Linux**: `sdk.dir=/home/YourUsername/Android/Sdk`
+   
+   **Note**: Android Studio will automatically create this file when you first open the project, but you can also create it manually if needed.
+
+3. **Build the web application**
    ```bash
    npm run build
    ```
 
-3. **Sync to Android**
+4. **Sync to Android**
    ```bash
    npx cap sync android
    ```

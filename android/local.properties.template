@@ -1,0 +1,22 @@
+## Template for local.properties file
+# Copy this file to 'local.properties' and update the sdk.dir path
+# to match your local Android SDK installation.
+#
+# This file must *NOT* be checked into Version Control Systems,
+# as it contains information specific to your local configuration.
+
+# Location of the Android SDK. Update this path based on your system:
+#
+# On Windows (typical):
+# sdk.dir=C\:\\Users\\YourUsername\\AppData\\Local\\Android\\Sdk
+#
+# On Mac (typical):
+# sdk.dir=/Users/YourUsername/Library/Android/sdk
+#
+# On Linux (typical):
+# sdk.dir=/home/YourUsername/Android/Sdk
+#
+# Or if you installed via snap:
+# sdk.dir=/home/YourUsername/snap/android-studio/current/Android/Sdk
+
+sdk.dir=/path/to/your/android/sdk
