@@ -112,7 +112,10 @@ All AI-generated analysis adheres to:
 ### Quick Start
 
 ```bash
-# Check if ready for Android Studio (recommended first step)
+# Verify Android Studio readiness (NEW!)
+./verify-android-studio-ready.sh
+
+# Check if ready for Android Studio (comprehensive check)
 ./preflight-check.sh
 
 # Install dependencies
