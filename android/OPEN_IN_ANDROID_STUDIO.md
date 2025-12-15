@@ -56,7 +56,7 @@ This project uses optimized Gradle settings:
 | Parallel Execution | ✅ Enabled | Multi-module speed boost |
 | Configuration Cache | ✅ Enabled | Skips config phase |
 | Build Cache | ✅ Enabled | Reuses previous outputs |
-| Heap Size | ✅ 4GB | Better performance |
+| Heap Size | ✅ 2GB | Good balance (upgradable to 4GB) |
 
 ## Expected Build Output
 

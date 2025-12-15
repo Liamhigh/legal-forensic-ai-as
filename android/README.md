@@ -40,7 +40,7 @@ The project includes optimized Gradle settings for fast, automatic builds:
 - ✅ **Parallel Execution**: Enabled for multi-module build speed
 - ✅ **Configuration Cache**: Enabled to skip configuration phase
 - ✅ **Build Cache**: Enabled to reuse outputs from previous builds
-- ✅ **Increased Heap Size**: 4GB for better performance
+- ✅ **Heap Size**: 2GB (can be increased to 4GB in gradle.properties for high-RAM systems)
 
 ## Troubleshooting
 
