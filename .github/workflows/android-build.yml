@@ -48,7 +48,7 @@ jobs:
 
     - name: Rename debug APK
       run: |
-        cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/verum-omnis-debug.apk
+        mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/verum-omnis-debug.apk
 
     - name: Upload debug APK
       uses: actions/upload-artifact@v4
@@ -195,7 +195,7 @@ jobs:
 
     - name: Rename release APK
       run: |
-        cp android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/verum-omnis-release.apk
+        mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/verum-omnis-release.apk
 
     # ========================================
     # RELEASE READINESS GUARD
@@ -214,8 +214,8 @@ jobs:
           exit 1
         fi
         
-        # Verify the APK is signed (will fail if unsigned)
-        if ! $APKSIGNER verify android/app/build/outputs/apk/release/verum-omnis-release.apk 2>&1; then
+        # Verify the APK is signed (capture output for better error reporting)
+        if ! $APKSIGNER verify android/app/build/outputs/apk/release/verum-omnis-release.apk; then
           echo "❌ CRITICAL: APK is NOT signed!"
           echo "❌ Refusing to create GitHub Release with unsigned APK"
           echo "❌ This protects against publishing unverified releases"
