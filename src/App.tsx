@@ -105,6 +105,11 @@ function App() {
     setIsLoading(true)
 
     try {
+      // Check if Spark API is available
+      if (!window.spark?.llm) {
+        throw new Error('Spark API not available. Please ensure the application is running in a GitHub Spark environment.')
+      }
+
       // Get forensic language enforcement rules
       const forensicRules = getForensicLanguageRules()
       
@@ -157,7 +162,42 @@ Provide a thorough forensic analysis with specific legal considerations.`
         addConversationEntry('assistant', response, false)
       }
     } catch (error) {
-      toast.error('Failed to get response. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      const errorString = String(error)
+      
+      // Check for specific Spark API errors
+      if (errorMessage.includes('Spark API not available')) {
+        toast.error('AI API not configured', {
+          description: 'This application requires GitHub Spark runtime. Please deploy to GitHub Spark or configure an API endpoint.'
+        })
+        
+        // Add system message explaining the issue
+        const systemMessage: ChatMessage = {
+          id: `sys-api-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          role: 'system',
+          content: '⚠️ AI API Not Available\n\nThis application requires the GitHub Spark runtime to function. The chat functionality will not work in local development without proper Spark configuration.\n\nTo use this feature:\n1. Deploy to GitHub Spark\n2. Configure SPARK_AGENT_URL environment variable\n3. Ensure Spark backend is running',
+          timestamp: Date.now()
+        }
+        setMessages((current) => [...current, systemMessage])
+      } else if (errorString.includes('LLM request failed') || errorMessage.includes('500') || errorMessage.includes('403')) {
+        toast.error('AI Service Unavailable', {
+          description: 'The GitHub Spark AI service is not accessible. This app requires deployment to GitHub Spark to function.'
+        })
+        
+        // Add helpful system message
+        const systemMessage: ChatMessage = {
+          id: `sys-llm-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          role: 'system',
+          content: '⚠️ AI Service Connection Failed\n\nThe chat AI is not available in this environment. This application is designed to run on GitHub Spark.\n\n**Why this happened:**\n- The Spark LLM backend is not running\n- Missing SPARK_AGENT_URL configuration\n- Not deployed to GitHub Spark environment\n\n**Note:** Other features like document sealing and PDF generation still work!',
+          timestamp: Date.now()
+        }
+        setMessages((current) => [...current, systemMessage])
+      } else {
+        toast.error('Failed to get response', {
+          description: 'Please try again or contact support if the issue persists.'
+        })
+      }
+      
       console.error('Error:', error)
     } finally {
       setIsLoading(false)
