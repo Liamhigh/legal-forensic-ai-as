@@ -1,0 +1,23 @@
+{
+  "code": "EU",
+  "name": "European Union",
+  "legal_system": "Mixed (varies by member state, but harmonized by EU directives)",
+  "authorities": [
+    "eIDAS Regulation (EU) No 910/2014",
+    "GDPR - General Data Protection Regulation (EU) 2016/679",
+    "Directive 2013/40/EU on attacks against information systems",
+    "Directive (EU) 2016/680 on data processing for law enforcement"
+  ],
+  "evidence_standards": {
+    "digital_evidence_admissible": true,
+    "chain_of_custody_required": true,
+    "expert_testimony_required": true,
+    "hash_algorithm_required": "SHA-512",
+    "timestamp_required": true
+  },
+  "data_retention": {
+    "minimum_days": 365,
+    "maximum_days": 1825
+  },
+  "notes": "Electronic evidence must comply with eIDAS for qualified electronic signatures and timestamps. GDPR compliance mandatory for personal data."
+}

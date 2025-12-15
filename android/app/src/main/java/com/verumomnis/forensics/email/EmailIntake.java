@@ -6,6 +6,7 @@ import android.net.Uri;
 import com.verumomnis.forensics.core.AuditLogger;
 import com.verumomnis.forensics.geo.GeoForensics;
 import com.verumomnis.forensics.security.SealGate;
+import com.verumomnis.forensics.security.SecureFileUtils;
 
 import org.apache.james.mime4j.dom.Message;
 import org.apache.james.mime4j.dom.field.ContentDispositionField;
@@ -40,12 +41,15 @@ public class EmailIntake {
     public static class SealedEmail {
         public final File sealedBundle;    // ZIP with MIME + headers + attachments + geo + cert
         public final String sha512Public;  // reproducible
+        public final String hmacSha512Device;  // device-bound chain-of-custody
         public final String geoSha;        // location lock
-        public final String blockchainTx;  // ETH/Polygon
+        public final String blockchainTx;  // ETH/Polygon or OFFLINE_PENDING
         
-        public SealedEmail(File sealedBundle, String sha512Public, String geoSha, String blockchainTx) {
+        public SealedEmail(File sealedBundle, String sha512Public, String hmacSha512Device, 
+                          String geoSha, String blockchainTx) {
             this.sealedBundle = sealedBundle;
             this.sha512Public = sha512Public;
+            this.hmacSha512Device = hmacSha512Device;
             this.geoSha = geoSha;
             this.blockchainTx = blockchainTx;
         }
@@ -81,14 +85,14 @@ public class EmailIntake {
         // 6. Seal the zip (SHA-512 + HMAC + blockchain)
         SealGate.SealedBlob sealed = SealGate.sealIn(ctx, Uri.fromFile(zip));
         
-        // 7. Clean
-        deleteRecursive(bundleDir);
-        if (!rawFile.delete()) rawFile.deleteOnExit();
-        if (!zip.delete()) zip.deleteOnExit();
+        // 7. Clean up temporary files securely (overwrite + delete)
+        SecureFileUtils.secureDeleteDirectory(bundleDir);
+        SecureFileUtils.secureDelete(rawFile);
+        SecureFileUtils.secureDelete(zip);
         
         AuditLogger.logEvent(ctx, "EMAIL_SEALED", "from=" + analysis.from + " subject=" + analysis.subject, sealed.sha512Public);
         
-        return new SealedEmail(sealed.file, sealed.sha512Public, geo.sha512, sealed.blockchainTx);
+        return new SealedEmail(sealed.file, sealed.sha512Public, sealed.hmacSha512Device, geo.sha512, sealed.blockchainTx);
     }
     
     /* ---------- helpers ---------- */

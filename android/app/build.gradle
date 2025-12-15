@@ -71,6 +71,12 @@ dependencies {
     implementation 'org.apache.james:apache-mime4j-dom:0.8.9'
     implementation 'com.sun.mail:android-mail:1.6.7'
     implementation 'com.sun.mail:android-activation:1.6.7'
+    
+    // PDF generation dependencies (Apache License 2.0)
+    implementation 'com.tom-roush:pdfbox-android:2.0.27.0'
+    
+    // JSON parsing (for jurisdiction files)
+    implementation 'org.json:json:20231013'
 }
 
 apply from: 'capacitor.build.gradle'

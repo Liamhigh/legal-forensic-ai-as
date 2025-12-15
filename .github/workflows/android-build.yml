@@ -62,6 +62,30 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # ========================================
+    # CI GUARD: Prevent signing regressions
+    # DO NOT MODIFY WITHOUT SECURITY REVIEW
+    # ========================================
+    - name: CI Guard - Check for masked placeholders in workflow
+      run: |
+        echo "Checking for masked signing placeholders in workflow..."
+        if grep -q '\*\*\*\*\*\*' .github/workflows/android-build.yml; then
+          echo "ERROR: Masked signing placeholder (******) detected in android-build.yml"
+          echo "This indicates a potential security regression where secrets were committed."
+          exit 1
+        fi
+        echo "✓ No masked placeholders found"
+
+    - name: CI Guard - Check for SHA-256 signing references
+      run: |
+        echo "Checking for SHA-256 signing references in workflow..."
+        if grep -iE 'sha-?256.*sign' .github/workflows/android-build.yml; then
+          echo "ERROR: SHA-256 signing detected in android-build.yml"
+          echo "APK signing must rely on keystore only, not SHA-256 hash signing."
+          exit 1
+        fi
+        echo "✓ No SHA-256 signing references found"
+
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
@@ -89,6 +113,11 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x android/gradlew
 
+    # ========================================
+    # SIGNING STEPS
+    # DO NOT MODIFY WITHOUT SECURITY REVIEW
+    # ========================================
+    
     # Decode keystore from secrets
     - name: Decode Keystore
       if: ${{ secrets.KEYSTORE_BASE64 }}
@@ -130,6 +159,31 @@ jobs:
       if: ${{ !secrets.KEYSTORE_BASE64 }}
       working-directory: ./android
       run: ./gradlew assembleRelease
+    
+    # ========================================
+    # END SIGNING STEPS
+    # ========================================
+
+    # Verify release APK exists
+    - name: Verify release APK exists
+      run: |
+        if [ ! -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
+          echo "ERROR: Expected release APK not found at android/app/build/outputs/apk/release/app-release.apk"
+          echo "Build may have failed silently or output path changed."
+          ls -la android/app/build/outputs/apk/release/ || echo "Release directory does not exist"
+          exit 1
+        fi
+        echo "✓ Release APK verified at android/app/build/outputs/apk/release/app-release.apk"
+
+    # Print build information
+    - name: Print build information
+      working-directory: ./android
+      run: |
+        echo "=== Android Build Information ==="
+        echo "Application ID: $(./gradlew -q printApplicationId 2>/dev/null || grep 'applicationId' app/build.gradle | awk '{print $2}' | tr -d '"')"
+        echo "Version Name: $(grep 'versionName' app/build.gradle | awk '{print $2}' | tr -d '"')"
+        echo "Version Code: $(grep 'versionCode' app/build.gradle | awk '{print $2}')"
+        echo "================================="
 
     - name: Confirm release APK
       run: |
