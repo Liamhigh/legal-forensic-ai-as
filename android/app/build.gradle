@@ -34,7 +34,7 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             // Apply signing config if available
-            if (signingConfigs.release.storeFile != null) {
+            if (project.hasProperty('android.injected.signing.store.file')) {
                 signingConfig signingConfigs.release
             }
         }

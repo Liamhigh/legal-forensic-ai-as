@@ -55,5 +55,3 @@ android/captures/
 # Android signing keys - NEVER commit these!
 *.jks
 *.keystore
-android/app/keystore.jks
-android/app/*.keystore
