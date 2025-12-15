@@ -404,7 +404,7 @@ export async function generatePDFReport(
   const { width: pageWidth, height: pageHeight } = lastPage.getSize()
   
   // Add certification footer to last page
-  let footerY = 150
+  const footerY = 150
   
   currentY = drawTextBlock(
     lastPage,
