@@ -113,9 +113,32 @@ echo ""
 
 # Check 6: Android Studio
 echo "6️⃣  Checking Android Studio..."
-if [ -d "/Applications/Android Studio.app" ] || [ -d "$HOME/android-studio" ] || command -v studio &> /dev/null; then
-    echo -e "${GREEN}✅ Android Studio appears to be installed${NC}"
-else
+ANDROID_STUDIO_FOUND=false
+
+# Check common installation paths
+if [ -d "/Applications/Android Studio.app" ]; then
+    ANDROID_STUDIO_FOUND=true
+    echo -e "${GREEN}✅ Android Studio found: /Applications/Android Studio.app${NC}"
+elif [ -d "$HOME/android-studio" ]; then
+    ANDROID_STUDIO_FOUND=true
+    echo -e "${GREEN}✅ Android Studio found: $HOME/android-studio${NC}"
+elif command -v studio &> /dev/null; then
+    ANDROID_STUDIO_FOUND=true
+    echo -e "${GREEN}✅ Android Studio found in PATH${NC}"
+# Check Linux package manager installations
+elif [ -d "$HOME/snap/android-studio" ]; then
+    ANDROID_STUDIO_FOUND=true
+    echo -e "${GREEN}✅ Android Studio found: snap installation${NC}"
+elif [ -d "/var/lib/flatpak/app/com.google.AndroidStudio" ] || [ -d "$HOME/.local/share/flatpak/app/com.google.AndroidStudio" ]; then
+    ANDROID_STUDIO_FOUND=true
+    echo -e "${GREEN}✅ Android Studio found: flatpak installation${NC}"
+# Check Windows common paths (when running in Git Bash/WSL)
+elif [ -d "/c/Program Files/Android/Android Studio" ] || [ -d "$HOME/AppData/Local/Android/Sdk" ]; then
+    ANDROID_STUDIO_FOUND=true
+    echo -e "${GREEN}✅ Android Studio found: Windows installation${NC}"
+fi
+
+if [ "$ANDROID_STUDIO_FOUND" = false ]; then
     echo -e "${YELLOW}⚠️  Android Studio not detected in common locations${NC}"
     echo "   If you have Android Studio installed, you can ignore this warning"
     WARNINGS=$((WARNINGS + 1))

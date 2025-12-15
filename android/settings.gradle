@@ -17,10 +17,19 @@ pluginManagement {
 }
 
 // Enable dependency resolution management for consistent versions
+// Keep repositories in sync with build.gradle
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
-        google()
+        google {
+            content {
+                includeGroupByRegex "com\\.android.*"
+                includeGroupByRegex "com\\.google.*"
+                includeGroupByRegex "androidx.*"
+            }
+        }
         mavenCentral()
+        // Add JitPack as fallback (matches build.gradle)
+        maven { url 'https://jitpack.io' }
     }
 }
