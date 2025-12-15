@@ -39,6 +39,9 @@ const SUGGESTED_PROMPTS = [
   "Examine witness testimony for inconsistencies",
 ]
 
+// PDF generation constants
+const PDF_WATERMARK_OPACITY = 0.07
+
 function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -358,11 +361,17 @@ Provide a thorough forensic analysis with specific legal considerations.`
 
         const pdfBytes = await generatePDFReport(pdfData, {
           includeWatermark: true,
-          watermarkOpacity: 0.07
+          watermarkOpacity: PDF_WATERMARK_OPACITY
         })
 
-        const sanitizedFileName = file.name.replace(/[^a-z0-9]/gi, '_')
-        downloadPDF(pdfBytes, `sealed_evidence_${sanitizedFileName}_${Date.now()}.pdf`)
+        // Sanitize filename: remove special chars, limit length, prevent path traversal
+        const sanitizedFileName = file.name
+          .replace(/[^a-z0-9._-]/gi, '_')  // Replace special chars
+          .replace(/^\.+/, '')              // Remove leading dots
+          .replace(/\.+/g, '.')             // Collapse multiple dots
+          .substring(0, 100)                // Limit length
+        const timestamp = Date.now()
+        downloadPDF(pdfBytes, `sealed_evidence_${sanitizedFileName}_${timestamp}.pdf`)
 
         toast.success('Sealed PDF generated', {
           description: 'Evidence report downloaded automatically'
