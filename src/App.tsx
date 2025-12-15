@@ -26,6 +26,11 @@ import {
   type EvidenceArtifact,
   type ForensicCertificate
 } from '@/services/caseManagement'
+import { 
+  generatePDFReport, 
+  downloadPDF, 
+  type PDFReportData 
+} from '@/services/pdfGenerator'
 
 const SUGGESTED_PROMPTS = [
   "Analyze the admissibility of digital evidence in this case",
@@ -33,6 +38,9 @@ const SUGGESTED_PROMPTS = [
   "Identify potential Brady violations in the prosecution's disclosure",
   "Examine witness testimony for inconsistencies",
 ]
+
+// PDF generation constants
+const PDF_WATERMARK_OPACITY = 0.07
 
 function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -137,6 +145,11 @@ User query: ${message}
 Provide a thorough forensic analysis with specific legal considerations.`
       }
 
+      // Check if Spark SDK is available
+      if (!(window as any).spark || !(window as any).spark.llm) {
+        throw new Error('AI service unavailable - Spark SDK not loaded. Check console for details.')
+      }
+
       const prompt = (window as any).spark.llmPrompt`${systemPrompt}`
       const response = await (window as any).spark.llm(prompt, 'gpt-4o')
 
@@ -157,7 +170,16 @@ Provide a thorough forensic analysis with specific legal considerations.`
         addConversationEntry('assistant', response, false)
       }
     } catch (error) {
-      toast.error('Failed to get response. Please try again.')
+      const errorMessage = (error as Error).message || 'Failed to get response. Please try again.'
+      if (errorMessage.includes('AI service unavailable')) {
+        toast.error('AI service unavailable', {
+          description: 'Check console for details'
+        })
+      } else {
+        toast.error('Failed to get response', {
+          description: errorMessage
+        })
+      }
       console.error('Error:', error)
     } finally {
       setIsLoading(false)
@@ -318,6 +340,48 @@ Provide a thorough forensic analysis with specific legal considerations.`
       }
 
       setMessages((current) => [...current, sealedMessage])
+
+      // PHASE 7: AUTO-GENERATE SEALED PDF
+      try {
+        const pdfData: PDFReportData = {
+          title: `Sealed Evidence: ${file.name}`,
+          content: certificateContent,
+          documentInfo: {
+            fileName: file.name,
+            hash: sealed.seal.documentHash,
+            timestamp: sealed.seal.timestamp,
+            jurisdiction: sealed.seal.jurisdiction
+          },
+          sealInfo: {
+            sealedBy: 'Verum Omnis Forensics',
+            timestamp: sealed.seal.timestamp,
+            location: sealed.seal.jurisdiction
+          }
+        }
+
+        const pdfBytes = await generatePDFReport(pdfData, {
+          includeWatermark: true,
+          watermarkOpacity: PDF_WATERMARK_OPACITY
+        })
+
+        // Sanitize filename: remove special chars, limit length, prevent path traversal
+        const sanitizedFileName = file.name
+          .replace(/[^a-z0-9._-]/gi, '_')  // Replace special chars
+          .replace(/^\.+/, '')              // Remove leading dots
+          .replace(/\.+/g, '.')             // Collapse multiple dots
+          .substring(0, 100)                // Limit length
+        const timestamp = Date.now()
+        downloadPDF(pdfBytes, `sealed_evidence_${sanitizedFileName}_${timestamp}.pdf`)
+
+        toast.success('Sealed PDF generated', {
+          description: 'Evidence report downloaded automatically'
+        })
+      } catch (pdfError) {
+        console.error('PDF generation failed:', pdfError)
+        toast.error('PDF generation failed', {
+          description: 'Evidence is still sealed and saved'
+        })
+      }
 
     } catch (error) {
       console.error('Error processing evidence:', error)
