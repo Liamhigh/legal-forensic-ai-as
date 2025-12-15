@@ -48,16 +48,20 @@ export async function generateNineBrainAnalysis(
 
 /**
  * Generate forensic certificate document
+ * Accepts either structured NineBrainAnalysis or plain text analysis
  */
 export async function generateForensicCertificate(
   evidenceId: string,
   fileName: string,
   evidenceHash: string,
-  nineBrainAnalysis: NineBrainAnalysis,
+  nineBrainAnalysis: NineBrainAnalysis | string,
   jurisdiction?: string
 ): Promise<string> {
   const timestamp = Date.now()
   const certificateId = `CERT-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+  
+  // Check if analysis is plain text (baseline) or structured (AI)
+  const isBaseline = typeof nineBrainAnalysis === 'string'
   
   // Generate certificate hash (hash of the certificate content itself)
   const certificateContent = JSON.stringify({
@@ -83,11 +87,15 @@ export async function generateForensicCertificate(
     { timestamp, jurisdiction }
   )
   
-  // Format certificate as sealed PDF content
-  const certificate = `
+  // Format certificate - different format for baseline vs AI analysis
+  let certificate: string
+  
+  if (isBaseline) {
+    // Baseline certificate format
+    certificate = `
 ═══════════════════════════════════════════════════════════════════
                   VERUM OMNIS FORENSIC CERTIFICATE
-                        Nine-Brain Analysis Report
+                      Baseline Forensic Analysis
 ═══════════════════════════════════════════════════════════════════
 
 CERTIFICATE ID: ${certificateId}
@@ -102,35 +110,10 @@ File Name: ${fileName}
 Evidence Hash (SHA-256): ${evidenceHash}
 
 ───────────────────────────────────────────────────────────────────
-NINE-BRAIN FORENSIC ANALYSIS
+FORENSIC ANALYSIS
 ───────────────────────────────────────────────────────────────────
 
-1. CONTEXT ANALYSIS
-${nineBrainAnalysis.contextAnalysis}
-
-2. AUTHENTICITY VERIFICATION
-Score: ${(nineBrainAnalysis.authenticityScore * 100).toFixed(1)}%
-${nineBrainAnalysis.standingVerification}
-
-3. JURISDICTION FLAGS
-${nineBrainAnalysis.jurisdictionFlags.length > 0 
-  ? nineBrainAnalysis.jurisdictionFlags.map(f => `• ${f}`).join('\n')
-  : '• No jurisdiction flags identified'}
-
-4. CHAIN OF CUSTODY
-${nineBrainAnalysis.chainOfCustody}
-
-5. INTEGRITY CHECK
-${nineBrainAnalysis.integrityCheck}
-
-6. METADATA ANALYSIS
-${nineBrainAnalysis.metadata}
-
-7. RISK ASSESSMENT
-${nineBrainAnalysis.riskAssessment}
-
-8. RECOMMENDATIONS
-${nineBrainAnalysis.recommendations}
+${nineBrainAnalysis}
 
 ───────────────────────────────────────────────────────────────────
 CRYPTOGRAPHIC SEALS
@@ -156,7 +139,83 @@ and becomes part of the immutable case record.
                         END OF CERTIFICATE
 ═══════════════════════════════════════════════════════════════════
 `
+  } else {
+    // AI-enhanced certificate format
+    const analysis = nineBrainAnalysis as NineBrainAnalysis
+    certificate = `
+═══════════════════════════════════════════════════════════════════
+                  VERUM OMNIS FORENSIC CERTIFICATE
+                        Nine-Brain Analysis Report
+═══════════════════════════════════════════════════════════════════
 
+CERTIFICATE ID: ${certificateId}
+EVIDENCE ID: ${evidenceId}
+DATE: ${new Date(timestamp).toLocaleString()}
+${jurisdiction ? `JURISDICTION: ${jurisdiction}` : ''}
+
+───────────────────────────────────────────────────────────────────
+EVIDENCE INFORMATION
+───────────────────────────────────────────────────────────────────
+File Name: ${fileName}
+Evidence Hash (SHA-256): ${evidenceHash}
+
+───────────────────────────────────────────────────────────────────
+NINE-BRAIN FORENSIC ANALYSIS
+───────────────────────────────────────────────────────────────────
+
+1. CONTEXT ANALYSIS
+${analysis.contextAnalysis}
+
+2. AUTHENTICITY VERIFICATION
+Score: ${(analysis.authenticityScore * 100).toFixed(1)}%
+${analysis.standingVerification}
+
+3. JURISDICTION FLAGS
+${analysis.jurisdictionFlags.length > 0 
+  ? analysis.jurisdictionFlags.map(f => `• ${f}`).join('\n')
+  : '• No jurisdiction flags identified'}
+
+4. CHAIN OF CUSTODY
+${analysis.chainOfCustody}
+
+5. INTEGRITY CHECK
+${analysis.integrityCheck}
+
+6. METADATA ANALYSIS
+${analysis.metadata}
+
+7. RISK ASSESSMENT
+${analysis.riskAssessment}
+
+8. RECOMMENDATIONS
+${analysis.recommendations}
+
+───────────────────────────────────────────────────────────────────
+CRYPTOGRAPHIC SEALS
+───────────────────────────────────────────────────────────────────
+Evidence Hash: ${evidenceHash}
+Certificate Hash: ${certificateHash}
+Bundle Hash (SHA-512): ${bundleHash}
+
+VERIFICATION: The bundle hash binds this certificate to the evidence
+artifact. Any modification to either will invalidate the bundle.
+
+───────────────────────────────────────────────────────────────────
+CERTIFICATION AUTHORITY
+───────────────────────────────────────────────────────────────────
+Sealed By: Verum Omnis Forensics
+Timestamp: ${new Date(timestamp).toISOString()}
+Version: 1.0.0
+
+This certificate strengthens the cryptographic seal of the evidence
+and becomes part of the immutable case record.
+
+═══════════════════════════════════════════════════════════════════
+                        END OF CERTIFICATE
+═══════════════════════════════════════════════════════════════════
+`
+  }
+  
   return certificate
 }
 

@@ -8,23 +8,16 @@ import { UnifiedInput } from '@/components/UnifiedInput'
 import { ChatMessageComponent, type ChatMessage } from '@/components/ChatMessage'
 import { CaseExport } from '@/components/CaseExport'
 import { SessionStatus } from '@/components/SessionStatus'
+import { ScannerStatusIndicator } from '@/components/ScannerStatusIndicator'
 import { getForensicLanguageRules } from '@/services/constitutionalEnforcement'
 import { isSessionLocked } from '@/services/authContext'
 import { detectIntent, IntentType, shouldSealContent } from '@/services/intentDetection'
 import { sealDocument } from '@/services/documentSealing'
-import { 
-  generateNineBrainAnalysis, 
-  generateForensicCertificate 
-} from '@/services/forensicCertificate'
+import { scanEvidence } from '@/services/scannerOrchestrator'
 import {
   getCurrentCase,
-  addEvidence,
-  addCertificate,
   addConversationEntry,
-  clearCase,
-  generateBundleHash,
-  type EvidenceArtifact,
-  type ForensicCertificate
+  clearCase
 } from '@/services/caseManagement'
 
 const SUGGESTED_PROMPTS = [
@@ -205,155 +198,29 @@ Provide a thorough forensic analysis with specific legal considerations.`
   }
 
   const handleEvidenceUpload = async (file: File, userMessage?: string) => {
-    // PHASE 1: DOCUMENT RECEIVED - Immediate acknowledgment
-    const receivedMessageId = `scan-received-${Date.now()}`
-    const receivedMessage: ChatMessage = {
-      id: receivedMessageId,
-      role: 'system',
-      content: '📄 Document received\n🔒 Preparing forensic scan…',
-      timestamp: Date.now(),
-      scanningState: {
-        fileName: file.name,
-        phase: 'received'
-      }
-    }
-    setMessages((current) => [...current, receivedMessage])
-
-    // Small delay to show receipt
-    await new Promise(resolve => setTimeout(resolve, 800))
-
     try {
-      // PHASE 2: VERIFYING INTEGRITY
-      setMessages((current) => 
-        current.map(msg => 
-          msg.id === receivedMessageId 
-            ? { ...msg, scanningState: { fileName: file.name, phase: 'verifying' } }
-            : msg
-        )
-      )
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      // Read file content
-      const isTextFile = file.type.startsWith('text/') || 
-                         file.name.endsWith('.txt') || 
-                         file.name.endsWith('.md')
-      const content = isTextFile ? await file.text() : await file.arrayBuffer()
-
-      // PHASE 3: RUNNING FORENSIC ANALYSIS
-      setMessages((current) => 
-        current.map(msg => 
-          msg.id === receivedMessageId 
-            ? { ...msg, scanningState: { fileName: file.name, phase: 'analyzing' } }
-            : msg
-        )
-      )
-      await new Promise(resolve => setTimeout(resolve, 1200))
-
-      // Seal the evidence
-      const sealed = await sealDocument(content, file.name)
+      // Use scanner orchestrator - it manages its own state
+      const result = await scanEvidence(file, userMessage)
       
-      // Generate Nine-Brain analysis
-      const nineBrainAnalysis = await generateNineBrainAnalysis(
-        file.name,
-        content,
-        file.type,
-        sealed.seal.documentHash
-      )
-
-      // Create evidence artifact
-      const evidenceArtifact: EvidenceArtifact = {
-        id: `EVD-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
-        fileName: file.name,
-        content: sealed.originalContent,
-        evidenceHash: sealed.seal.documentHash,
-        timestamp: sealed.seal.timestamp,
-        jurisdiction: sealed.seal.jurisdiction
-      }
-
-      // Add evidence to case
-      addEvidence(evidenceArtifact)
-
-      // PHASE 4: GENERATING CERTIFICATE
-      setMessages((current) => 
-        current.map(msg => 
-          msg.id === receivedMessageId 
-            ? { ...msg, scanningState: { fileName: file.name, phase: 'generating-cert' } }
-            : msg
-        )
-      )
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      // Generate forensic certificate
-      const certificateContent = await generateForensicCertificate(
-        evidenceArtifact.id,
-        file.name,
-        sealed.seal.documentHash,
-        nineBrainAnalysis,
-        sealed.seal.jurisdiction
-      )
-
-      // Hash the certificate
-      const encoder = new TextEncoder()
-      const certData = encoder.encode(certificateContent)
-      const certHashBuffer = await crypto.subtle.digest('SHA-256', certData)
-      const certHashArray = Array.from(new Uint8Array(certHashBuffer))
-      const certificateHash = certHashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-
-      // Generate bundle hash
-      const bundleHash = await generateBundleHash(
-        sealed.seal.documentHash,
-        certificateHash,
-        { 
-          timestamp: sealed.seal.timestamp, 
-          jurisdiction: sealed.seal.jurisdiction 
-        }
-      )
-
-      // Create certificate artifact
-      const certificateArtifact: ForensicCertificate = {
-        id: `CERT-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
-        evidenceId: evidenceArtifact.id,
-        certificateHash,
-        nineBrainAnalysis: certificateContent,
-        timestamp: Date.now(),
-        bundleHash
-      }
-
-      // Add certificate to case
-      addCertificate(certificateArtifact)
-
       // Update current case state
       setCurrentCase(getCurrentCase())
 
-      // PHASE 5: SEALING
-      setMessages((current) => 
-        current.map(msg => 
-          msg.id === receivedMessageId 
-            ? { ...msg, scanningState: { fileName: file.name, phase: 'sealing' } }
-            : msg
-        )
-      )
-      await new Promise(resolve => setTimeout(resolve, 800))
-
-      // Remove scanning indicator and show final result
-      setMessages((current) => 
-        current.filter(msg => msg.id !== receivedMessageId)
-      )
-
-      // PHASE 6: OUTPUT - Show sealed artifacts
+      // Show sealed artifacts in chat
       const sealedMessage: ChatMessage = {
         id: `sealed-${Date.now()}`,
         role: 'system',
-        content: '✅ Document scanned and sealed\n🔒 Certificate generated and bound\n📁 Added to current case',
+        content: result.aiAnalysisIncluded 
+          ? '✅ Document scanned and sealed\n🔒 Certificate generated and bound\n🤖 AI analysis included\n📁 Added to current case'
+          : '✅ Document scanned and sealed\n🔒 Certificate generated and bound\n⚠️ AI analysis unavailable - baseline scan completed\n📁 Added to current case',
         timestamp: Date.now(),
         sealedArtifacts: {
           fileName: file.name,
-          evidenceHash: sealed.seal.documentHash,
-          certificateId: certificateArtifact.id,
-          certificateHash: certificateArtifact.certificateHash,
-          bundleHash: certificateArtifact.bundleHash,
-          documentContent: sealed.originalContent,
-          certificateContent: certificateContent
+          evidenceHash: result.evidenceHash,
+          certificateId: result.certificateId,
+          certificateHash: result.certificateHash,
+          bundleHash: result.bundleHash,
+          documentContent: result.documentContent,
+          certificateContent: result.certificateContent
         }
       }
 
@@ -362,14 +229,18 @@ Provide a thorough forensic analysis with specific legal considerations.`
     } catch (error) {
       console.error('Error processing evidence:', error)
       
-      // Remove scanning indicator
-      setMessages((current) => 
-        current.filter(msg => msg.id !== receivedMessageId)
-      )
-      
       toast.error('Failed to seal evidence', {
         description: (error as Error).message
       })
+      
+      // Add error message to chat
+      const errorMessage: ChatMessage = {
+        id: `error-${Date.now()}`,
+        role: 'system',
+        content: `❌ Scanner error: ${(error as Error).message}\n\nPlease try again or contact support if the issue persists.`,
+        timestamp: Date.now()
+      }
+      setMessages((current) => [...current, errorMessage])
     }
   }
 
@@ -503,6 +374,9 @@ Provide a thorough forensic analysis with specific legal considerations.`
               </motion.div>
             ) : (
               <div className="space-y-6" style={{ maxWidth: 'var(--max-width-chat, 680px)', margin: '0 auto' }}>
+                {/* Scanner Status Indicator - Independent of chat messages */}
+                <ScannerStatusIndicator />
+                
                 <AnimatePresence>
                   {messages.map((message) => (
                     <motion.div
