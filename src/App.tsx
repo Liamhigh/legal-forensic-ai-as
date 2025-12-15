@@ -106,7 +106,7 @@ function App() {
 
     try {
       // Check if Spark API is available
-      if (!window.spark || !window.spark.llm) {
+      if (!window.spark?.llm) {
         throw new Error('Spark API not available. Please ensure the application is running in a GitHub Spark environment.')
       }
 
@@ -173,7 +173,7 @@ Provide a thorough forensic analysis with specific legal considerations.`
         
         // Add system message explaining the issue
         const systemMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
+          id: `sys-api-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
           role: 'system',
           content: '⚠️ AI API Not Available\n\nThis application requires the GitHub Spark runtime to function. The chat functionality will not work in local development without proper Spark configuration.\n\nTo use this feature:\n1. Deploy to GitHub Spark\n2. Configure SPARK_AGENT_URL environment variable\n3. Ensure Spark backend is running',
           timestamp: Date.now()
@@ -186,7 +186,7 @@ Provide a thorough forensic analysis with specific legal considerations.`
         
         // Add helpful system message
         const systemMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
+          id: `sys-llm-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
           role: 'system',
           content: '⚠️ AI Service Connection Failed\n\nThe chat AI is not available in this environment. This application is designed to run on GitHub Spark.\n\n**Why this happened:**\n- The Spark LLM backend is not running\n- Missing SPARK_AGENT_URL configuration\n- Not deployed to GitHub Spark environment\n\n**Note:** Other features like document sealing and PDF generation still work!',
           timestamp: Date.now()
