@@ -7,7 +7,6 @@ import { FileText, Download, Lock, Image } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { 
   generateForensicReport, 
-  exportReportWithWatermark,
   getWatermarkUrl,
   type ReportData 
 } from '@/services/pdfReportGenerator'
