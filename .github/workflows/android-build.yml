@@ -262,17 +262,3 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate APK hash
-        if: ${{ github.actor != 'dependabot[bot]' }}
-        run: |
-          sha256sum android/app/build/outputs/apk/release/*.apk > android/app/build/outputs/apk/release/app-release.sha256
-
-      - name: Upload release APK and hash
-        if: ${{ github.actor != 'dependabot[bot]' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-apk
-          path: |
-            android/app/build/outputs/apk/release/*.apk
-            android/app/build/outputs/apk/release/*.sha256
