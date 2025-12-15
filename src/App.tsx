@@ -323,19 +323,14 @@ Provide a thorough forensic analysis with specific legal considerations.`
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card px-6 py-4 flex-shrink-0">
+    <div className="flex flex-col h-screen bg-background" style={{ maxWidth: '100vw', overflowX: 'hidden' }}>
+      {/* Minimal Header */}
+      <header className="border-b border-border bg-card px-4 py-3 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img 
-              src="/assets/company-logo-1.jpg" 
-              alt="Company Logo 1" 
-              className="h-10 w-10 rounded object-cover"
-            />
-            <Scales size={32} weight="duotone" className="text-primary" />
+          <div className="flex items-center gap-2">
+            <Scales size={24} weight="duotone" className="text-primary" />
             <div>
-              <h1 className="text-xl font-semibold tracking-tight text-foreground">
+              <h1 className="text-base font-semibold tracking-tight text-foreground">
                 Verum Omnis
               </h1>
               <p className="text-xs text-muted-foreground">
@@ -343,12 +338,7 @@ Provide a thorough forensic analysis with specific legal considerations.`
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <img 
-              src="/assets/company-logo-2.jpg" 
-              alt="Company Logo 2" 
-              className="h-10 w-10 rounded object-cover"
-            />
+          <div className="flex items-center gap-2">
             <SessionStatus />
             <CaseExport />
             {messages.length > 1 && (
@@ -358,29 +348,30 @@ Provide a thorough forensic analysis with specific legal considerations.`
                 onClick={handleClear}
                 className="text-muted-foreground hover:text-foreground"
               >
-                <Trash size={18} weight="regular" />
-                <span className="ml-2">Clear</span>
+                <Trash size={16} weight="regular" />
               </Button>
             )}
           </div>
         </div>
       </header>
 
-      {/* Main Chat Area */}
+      {/* Main Chat Area - Full Height */}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          <div ref={scrollRef} className="max-w-3xl mx-auto px-6 py-6">
+          <div ref={scrollRef} className="max-w-3xl mx-auto px-4 py-6" style={{ width: '100%' }}>
             {messages.length === 0 || (messages.length === 1 && messages[0].id === 'welcome') ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center min-h-[60vh] text-center"
+                className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4"
               >
-                <Scales size={64} weight="duotone" className="text-primary mb-6" />
-                <h2 className="text-2xl font-semibold text-foreground mb-2">
+                <Scales size={48} weight="duotone" className="text-primary mb-4" />
+                <h2 className="text-xl font-semibold text-foreground mb-2">
                   Welcome to Verum Omnis
                 </h2>
-                <p className="text-base text-muted-foreground mb-8 max-w-2xl leading-relaxed">
+                <p className="text-base text-muted-foreground mb-6 max-w-2xl" style={{ 
+                  lineHeight: 'var(--line-height-base, 1.6)' 
+                }}>
                   Your forensic thinking partner. Add evidence, ask questions, or request documents.
                   Everything is automatically sealed and added to your case.
                 </p>
@@ -399,7 +390,7 @@ Provide a thorough forensic analysis with specific legal considerations.`
                 </div>
               </motion.div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6" style={{ maxWidth: 'var(--max-width-chat, 680px)', margin: '0 auto' }}>
                 <AnimatePresence>
                   {messages.map((message) => (
                     <motion.div
@@ -420,7 +411,7 @@ Provide a thorough forensic analysis with specific legal considerations.`
                     animate={{ opacity: 1, y: 0 }}
                     className="flex justify-start"
                   >
-                    <div className="bg-card border border-border rounded-2xl px-4 py-3">
+                    <div className="bg-transparent rounded-2xl px-5 py-4">
                       <div className="flex gap-1">
                         <span className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" />
                         <span className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse delay-75" />
@@ -435,9 +426,9 @@ Provide a thorough forensic analysis with specific legal considerations.`
         </ScrollArea>
       </div>
 
-      {/* Input Area */}
-      <div className="border-t border-border bg-card px-6 py-4 flex-shrink-0">
-        <div className="max-w-3xl mx-auto">
+      {/* Input Area - Fixed Bottom */}
+      <div className="border-t border-border bg-card px-4 py-4 flex-shrink-0">
+        <div className="max-w-3xl mx-auto" style={{ maxWidth: 'var(--max-width-chat, 680px)' }}>
           <UnifiedInput
             onSubmit={handleSubmit}
             disabled={isLoading}

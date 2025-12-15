@@ -74,7 +74,7 @@ export function UnifiedInput({ onSubmit, disabled, placeholder }: UnifiedInputPr
       )}
 
       {/* Input bar */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-end">
         <input
           ref={fileInputRef}
           type="file"
@@ -88,8 +88,8 @@ export function UnifiedInput({ onSubmit, disabled, placeholder }: UnifiedInputPr
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled}
           variant="ghost"
-          size="sm"
-          className="text-muted-foreground hover:text-foreground"
+          size="icon"
+          className="text-muted-foreground hover:text-foreground flex-shrink-0"
         >
           <Paperclip size={20} weight="regular" />
         </Button>
@@ -100,13 +100,15 @@ export function UnifiedInput({ onSubmit, disabled, placeholder }: UnifiedInputPr
           onKeyDown={handleKeyPress}
           placeholder={placeholder || "Add evidence or ask a question..."}
           disabled={disabled}
-          className="flex-1 bg-background border-input focus-visible:ring-accent rounded-xl"
+          className="flex-1 bg-background border-input focus-visible:ring-1 focus-visible:ring-ring rounded-xl text-base py-3 px-4"
+          style={{ fontSize: '16px' }}
         />
 
         <Button
           onClick={handleSubmit}
           disabled={(!message.trim() && attachedFiles.length === 0) || disabled}
-          className="bg-accent text-accent-foreground hover:bg-accent/90 transition-all active:scale-95 rounded-xl"
+          size="icon"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 rounded-xl flex-shrink-0"
         >
           <PaperPlaneRight size={20} weight="fill" />
         </Button>
