@@ -205,7 +205,7 @@ jobs:
         APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -V | tail -n 1)
         
         # Run verification silently and check result
-        if $APKSIGNER verify android/app/build/outputs/apk/release/app-release.apk >/dev/null 2>&1; then
+        if $APKSIGNER verify android/app/build/outputs/apk/release/app-release.apk >/dev/null; then
           echo "✓ Final verification passed: APK is cryptographically signed"
           echo "✓ APK is ready for Google Play and enterprise distribution"
         else

@@ -9,9 +9,9 @@ This document provides final confirmation that the Android APK signing pipeline 
 **YES** - The workflow uses Android's standard signing mechanism with Gradle injected properties.
 
 **Justification:** 
-- Lines 148-162 of `android-build.yml` invoke `gradlew assembleRelease` with all 4 required signing parameters (`-Pandroid.injected.signing.store.file`, `-Pandroid.injected.signing.store.password`, `-Pandroid.injected.signing.key.alias`, `-Pandroid.injected.signing.key.password`)
+- Lines 158-162 of `android-build.yml` invoke `gradlew assembleRelease` with all 4 required signing parameters (`-Pandroid.injected.signing.store.file`, `-Pandroid.injected.signing.store.password`, `-Pandroid.injected.signing.key.alias`, `-Pandroid.injected.signing.key.password`)
 - Lines 19-49 of `android/app/build.gradle` configure `signingConfigs.release` to apply these parameters
-- Line 42-43 of `build.gradle` applies the signing config to the release build type when credentials are available
+- Lines 42-47 of `android/app/build.gradle` apply the signing config to the release build type when credentials are available, with error handling if `REQUIRE_SIGNED_RELEASE` is set
 - The signing uses the decoded keystore file (line 145) with proper credentials passed as environment variables
 
 ### 2. Will GitHub Actions fail if the APK is unsigned?
@@ -20,17 +20,17 @@ This document provides final confirmation that the Android APK signing pipeline 
 
 **Justification:**
 - **Pre-build validation** (lines 122-139): Fails immediately if any of the 4 signing secrets are missing on main branch
-- **Build-time enforcement** (line 44-46 of `build.gradle`): `REQUIRE_SIGNED_RELEASE=true` causes Gradle to throw exception if signing credentials are missing
-- **Post-build verification** (lines 165-189): Uses `apksigner verify` to validate APK signature, fails if verification fails
-- **Final verification** (lines 200-218): Double-checks APK signature on main branch, fails with clear error if unsigned
-- **Unsigned build restriction** (line 193): Unsigned builds are explicitly blocked on main branch (`github.ref != 'refs/heads/main'`)
+- **Build-time enforcement** (lines 44-46 of `android/app/build.gradle`): `REQUIRE_SIGNED_RELEASE=true` causes Gradle to throw exception if signing credentials are missing
+- **Post-build verification** (lines 165-188): Uses `apksigner verify` to validate APK signature, fails if verification fails
+- **Final verification** (lines 199-216): Double-checks APK signature on main branch, fails with clear error if unsigned
+- **Unsigned build restriction** (line 192): Condition `!secrets.KEYSTORE_BASE64 && github.ref != 'refs/heads/main'` allows unsigned builds only on non-main branches, blocking them on main
 
 ### 3. Is the APK signature verified using official Android tooling?
 
 **YES** - The workflow uses `apksigner` from the Android SDK, the official Google tool for APK verification.
 
 **Justification:**
-- Lines 169-177 and 206 find and use `apksigner` from `$ANDROID_HOME/build-tools`
+- Lines 169, 179, and 205, 208 find and use `apksigner` from `$ANDROID_HOME/build-tools`
 - `apksigner` is the official Android SDK tool documented at https://developer.android.com/tools/apksigner
 - The tool performs cryptographic verification of APK v1 (JAR) and v2 (APK) signatures
 - Command `apksigner verify --print-certs` outputs certificate details and validates signature chain
