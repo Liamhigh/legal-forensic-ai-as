@@ -55,3 +55,7 @@ android/captures/
 # Android signing keys - NEVER commit these!
 *.jks
 *.keystore
+
+# Large PDF files - move to assets or external storage
+/*.PDF
+/*.pdf
