@@ -1,5 +1,35 @@
+// Root project name
+rootProject.name = 'VerumOmnisForensics'
+
 include ':app'
 include ':capacitor-cordova-android-plugins'
 project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')
 
 apply from: 'capacitor.settings.gradle'
+
+// Enable Gradle features for better performance
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+// Enable dependency resolution management for consistent versions
+// Keep repositories in sync with build.gradle
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google {
+            content {
+                includeGroupByRegex "com\\.android.*"
+                includeGroupByRegex "com\\.google.*"
+                includeGroupByRegex "androidx.*"
+            }
+        }
+        mavenCentral()
+        // Add JitPack as fallback (matches build.gradle)
+        maven { url 'https://jitpack.io' }
+    }
+}

@@ -37,7 +37,24 @@ npm run android:build
 [info] Sync finished in 0.2s
 ```
 
-### Step 3: Open in Android Studio (1 minute)
+### Step 3: Configure Android SDK (1 minute - if needed)
+
+Android Studio will automatically create a `local.properties` file when you first open the project. However, if you need to create it manually:
+
+```bash
+cd android
+cp local.properties.template local.properties
+# Edit the file and set your SDK path
+```
+
+**Common SDK locations:**
+- **Windows**: `C:\Users\YourUsername\AppData\Local\Android\Sdk`
+- **Mac**: `/Users/YourUsername/Library/Android/sdk`
+- **Linux**: `/home/YourUsername/Android/Sdk`
+
+**Note**: If Android Studio is already installed, it will handle this automatically when you open the project.
+
+### Step 4: Open in Android Studio (1 minute)
 ```bash
 # Option A: Use npm script
 npm run android:open
@@ -46,13 +63,13 @@ npm run android:open
 # File > Open > Navigate to: legal-forensic-ai-as/android/
 ```
 
-### Step 4: Wait for Gradle Sync (5-10 minutes first time)
+### Step 5: Wait for Gradle Sync (5-10 minutes first time)
 1. Android Studio will automatically start Gradle sync
 2. Wait for "Gradle Build Finished" in bottom status bar
 3. If prompted, accept any SDK or build tool updates
 4. **Common issue**: If sync fails, click "Sync Project with Gradle Files" button
 
-### Step 5: Verify Project Structure
+### Step 6: Verify Project Structure
 Check that these are visible in Project panel (Android view):
 ```
 app/
@@ -71,7 +88,7 @@ app/
 └── build.gradle
 ```
 
-### Step 6: Build and Run (3-5 minutes)
+### Step 7: Build and Run (3-5 minutes)
 
 #### Option A: Run on Physical Device
 1. **Enable USB Debugging** on your Android device:

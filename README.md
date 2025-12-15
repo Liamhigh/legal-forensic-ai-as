@@ -112,6 +112,9 @@ All AI-generated analysis adheres to:
 ### Quick Start
 
 ```bash
+# Check if ready for Android Studio (recommended first step)
+./preflight-check.sh
+
 # Install dependencies
 npm install
 
@@ -124,9 +127,20 @@ npm run build
 # Build and sync to Android
 npm run android:build
 
-# Open in Android Studio
+# Open in Android Studio (will auto-build)
 npm run android:open
 ```
+
+### Android Studio Auto-Build
+
+This project is configured to **automatically build** when opened in Android Studio:
+
+1. **Open Project**: File → Open → Select the `android` folder
+2. **Auto-Sync**: Android Studio automatically syncs Gradle (5-10 min first time)
+3. **Auto-Build**: Project builds automatically after sync completes
+4. **Ready to Run**: Click the Run button to install on device/emulator
+
+**Optimized for speed**: Gradle daemon, parallel builds, and configuration caching enabled.
 
 For detailed Android build instructions, see [ANDROID_BUILD.md](./ANDROID_BUILD.md).
 
