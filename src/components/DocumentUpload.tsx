@@ -199,10 +199,10 @@ export function DocumentUpload() {
           <Shield size={32} weight="duotone" className="text-primary" />
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-foreground">
-              Forensic Document Sealing
+              Your sealed case file
             </h3>
             <p className="text-sm text-muted-foreground">
-              Upload documents to cryptographically seal with geolocation and timestamp
+              Upload documents to seal with geolocation and timestamp verification
             </p>
           </div>
         </div>
@@ -219,10 +219,10 @@ export function DocumentUpload() {
           <Button
             onClick={handleUploadClick}
             disabled={isProcessing}
-            className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
           >
             <Upload size={18} weight="fill" className="mr-2" />
-            {isProcessing ? 'Processing...' : 'Upload Document to Seal'}
+            {isProcessing ? 'Processing...' : 'Upload document'}
           </Button>
         ) : (
           <div className="space-y-3">
@@ -285,8 +285,8 @@ export function DocumentUpload() {
         )}
 
         <div className="text-xs text-muted-foreground space-y-1">
-          <p>• Documents are sealed with SHA-256 cryptographic hash</p>
-          <p>• Geolocation and jurisdiction data included for legal compliance</p>
+          <p>• Documents are sealed with cryptographic hash verification</p>
+          <p>• Location and jurisdiction data included automatically</p>
           <p>• Previously sealed documents are verified, not re-sealed</p>
         </div>
       </div>

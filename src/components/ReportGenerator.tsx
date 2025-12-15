@@ -6,10 +6,10 @@ import { Label } from '@/components/ui/label'
 import { FileText, Download, Lock, Image } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { 
-  generateForensicReport, 
-  getWatermarkUrl,
-  type ReportData 
-} from '@/services/pdfReportGenerator'
+  generatePDFReport,
+  downloadPDF,
+  type PDFReportData
+} from '@/services/pdfGenerator'
 
 interface ReportGeneratorProps {
   documentData?: {
@@ -38,7 +38,7 @@ export function ReportGenerator({ documentData, analysisContent }: ReportGenerat
       // Sanitize filename to prevent injection attacks
       const sanitizedFileName = documentData?.fileName.replace(/[<>:"/\\|?*]/g, '_') || 'Unknown'
       
-      const reportData: ReportData = {
+      const reportData: PDFReportData = {
         title: documentData?.fileName 
           ? `Forensic Analysis: ${sanitizedFileName}`
           : 'Forensic Analysis Report',
@@ -51,25 +51,17 @@ export function ReportGenerator({ documentData, analysisContent }: ReportGenerat
         } : undefined
       }
 
-      const report = await generateForensicReport(reportData, {
-        password: password.trim() || undefined,
+      // Generate PDF with proper layer ordering
+      const pdfBytes = await generatePDFReport(reportData, {
         includeWatermark,
-        watermarkOpacity: 0.3
+        watermarkOpacity: 0.07, // 0.06-0.08 as per spec
       })
 
-      // Download the report
-      const blob = new Blob([report], { type: 'text/plain' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `forensic_report_${Date.now()}.txt`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      // Download the PDF
+      downloadPDF(pdfBytes, `forensic_report_${Date.now()}.pdf`)
 
       toast.success('Forensic report generated successfully', {
-        description: password ? 'Report is password protected' : 'Report is ready for review'
+        description: 'PDF report is ready for review'
       })
 
       // Reset form
@@ -88,7 +80,7 @@ export function ReportGenerator({ documentData, analysisContent }: ReportGenerat
   }
 
   const handleViewWatermark = () => {
-    window.open(getWatermarkUrl(), '_blank')
+    window.open('/assets/watermark.png', '_blank')
   }
 
   return (
@@ -98,10 +90,10 @@ export function ReportGenerator({ documentData, analysisContent }: ReportGenerat
           <FileText size={32} weight="duotone" className="text-primary" />
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-foreground">
-              Generate Forensic Report
+              Create a verified report
             </h3>
             <p className="text-sm text-muted-foreground">
-              Export analysis with watermark and optional password protection
+              Export analysis as PDF with watermark certification
             </p>
           </div>
         </div>
@@ -129,31 +121,15 @@ export function ReportGenerator({ documentData, analysisContent }: ReportGenerat
             </Button>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium flex items-center gap-2">
-              <Lock size={16} weight="regular" />
-              Password Protection (Optional)
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter password to protect report..."
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="bg-background border-input"
-            />
-            <p className="text-xs text-muted-foreground">
-              Leave blank for unprotected report. Protected reports require password to view full content.
-            </p>
-          </div>
+
 
           <Button
             onClick={handleGenerateReport}
             disabled={isGenerating || !analysisContent}
-            className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl shadow-sm"
           >
             <Download size={18} weight="fill" className="mr-2" />
-            {isGenerating ? 'Generating...' : 'Generate & Download Report'}
+            {isGenerating ? 'Generating...' : 'Create verified report'}
           </Button>
         </div>
 

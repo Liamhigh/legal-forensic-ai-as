@@ -124,11 +124,11 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
             />
             <Scales size={32} weight="duotone" className="text-primary" />
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                VERUM OMNIS
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                Verum Omnis
               </h1>
-              <p className="text-sm text-muted-foreground tracking-wide">
-                AI Forensics for Truth
+              <p className="text-xs text-muted-foreground">
+                AI Forensics Assistant
               </p>
             </div>
           </div>
@@ -156,7 +156,7 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
 
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          <div ref={scrollRef} className="max-w-4xl mx-auto px-6 py-6">
+          <div ref={scrollRef} className="max-w-3xl mx-auto px-6 py-6">
             {messageList.length === 0 && (
               <div className="space-y-6 mb-6">
                 <PDFViewer />
@@ -173,11 +173,11 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
                 className="flex flex-col items-center justify-center min-h-[60vh] text-center"
               >
                 <Scales size={64} weight="duotone" className="text-primary mb-6" />
-                <h2 className="text-3xl font-bold text-foreground mb-3">
+                <h2 className="text-2xl font-semibold text-foreground mb-2">
                   Welcome to Verum Omnis
                 </h2>
-                <p className="text-lg text-muted-foreground mb-8 max-w-2xl">
-                  Your AI-powered legal forensics assistant. Ask questions about evidence analysis, 
+                <p className="text-base text-muted-foreground mb-8 max-w-2xl leading-relaxed">
+                  Your AI assistant for legal forensics. Ask questions about evidence analysis, 
                   case law research, or forensic procedures.
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center max-w-3xl">
@@ -187,7 +187,7 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
                       variant="outline"
                       onClick={() => handlePromptClick(prompt)}
                       disabled={isLoading}
-                      className="text-sm hover:bg-accent hover:text-accent-foreground hover:border-accent transition-all"
+                      className="text-sm hover:bg-accent hover:text-accent-foreground transition-all rounded-xl"
                     >
                       {prompt}
                     </Button>
@@ -209,13 +209,13 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
                       }`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-lg px-4 py-3 ${
+                        className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${
                           message.role === 'user'
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-card border border-border text-card-foreground'
                         }`}
                       >
-                        <p className="text-base leading-relaxed whitespace-pre-wrap">
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
                           {message.content}
                         </p>
                         <p
@@ -266,21 +266,21 @@ Provide a thorough forensic analysis with specific legal considerations, adherin
       </div>
 
       <div className="border-t border-border bg-card px-6 py-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-3xl mx-auto">
           <div className="flex gap-2">
             <Input
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Ask about evidence analysis, case law, forensic procedures..."
+              placeholder="Ask about evidence, case law, or forensic procedures..."
               disabled={isLoading}
-              className="flex-1 bg-background border-input focus-visible:ring-accent"
+              className="flex-1 bg-background border-input focus-visible:ring-accent rounded-xl"
             />
             <Button
               onClick={() => handleSend()}
               disabled={!input.trim() || isLoading}
-              className="bg-accent text-accent-foreground hover:bg-accent/90 transition-all active:scale-95"
+              className="bg-accent text-accent-foreground hover:bg-accent/90 transition-all active:scale-95 rounded-xl"
             >
               <PaperPlaneRight size={20} weight="fill" />
             </Button>
