@@ -38,29 +38,34 @@ On Windows (PowerShell):
 [Convert]::ToBase64String([IO.File]::ReadAllBytes("verum-omnis.jks")) | Out-File keystore.txt
 ```
 
-### 3. Add Secrets to GitHub
+### 3. Add Secrets to GitHub (REQUIRED)
 
 Go to your repository on GitHub:
 1. Navigate to Settings > Secrets and variables > Actions
 2. Add the following secrets:
 
-| Secret Name | Value | Description |
-|------------|-------|-------------|
-| `KEYSTORE_BASE64` | Content of `keystore.txt` | Base64 encoded keystore file |
-| `KEYSTORE_PASSWORD` | Your keystore password | Password used to create keystore |
-| `KEY_ALIAS` | `verum-omnis-key` | Alias used when creating keystore |
-| `KEY_PASSWORD` | Your key password | Password for the key alias |
+| Secret Name | Value | Description | Required |
+|------------|-------|-------------|----------|
+| `KEYSTORE_BASE64` | Content of `keystore.txt` | Base64 encoded keystore file | ✅ YES |
+| `KEYSTORE_PASSWORD` | Your keystore password | Password used to create keystore | ✅ YES |
+| `KEY_ALIAS` | `verum-omnis-key` | Alias used when creating keystore | ✅ YES |
+| `KEY_PASSWORD` | Your key password | Password for the key alias | ✅ YES |
+
+**IMPORTANT**: All four secrets are required for signed builds. If any are missing, the build will fail with a clear error message.
 
 ### 4. Test the Workflow
 
 Once secrets are configured:
 1. Push to the `main` branch or trigger workflow manually
 2. GitHub Actions will build and sign the APK
-3. Download the signed APK from the Actions artifacts
+3. **Automatic verification**: APK signature is verified with `apksigner`
+4. Download the signed APK from the Actions artifacts
 
 ## Workflow Behavior
 
 The GitHub Actions workflow automatically detects whether signing secrets are configured and builds the appropriate APK type.
+
+**CRITICAL**: The workflow now enforces cryptographic verification. A "green check" only means the APK is properly signed.
 
 ### Debug Build
 - **Triggers**: All pushes and pull requests
@@ -73,15 +78,34 @@ The GitHub Actions workflow automatically detects whether signing secrets are co
 - **Output**: `verum-omnis-release.apk`
 - **Signing**: 
   - **Signed APK**: Built when `KEYSTORE_BASE64` and related secrets are configured
-  - **Unsigned APK**: Built when secrets are not configured (for testing workflow)
+    - ✅ APK signature verified with `apksigner verify` in CI
+    - ✅ Build fails if signing credentials are incomplete
+    - ✅ Certificate details logged for audit trail
+  - **Unsigned APK**: Built when secrets are not configured (for testing workflow only)
 - **Use**: Distribution and Play Store uploads (signed APK only)
+
+### Signature Verification (Automated)
+
+The workflow automatically verifies every signed release APK using:
+
+```bash
+apksigner verify --print-certs app-release.apk
+```
+
+This ensures:
+- APK is cryptographically signed
+- No silent fallback to unsigned builds
+- Certificate information is visible in CI logs
 
 ## Verifying Signed APK
 
-After downloading the signed APK, verify it:
+The CI automatically verifies APK signatures, but you can also verify locally:
 
 ```bash
-# Check APK signature
+# Check APK signature (recommended method)
+apksigner verify --print-certs app-release.apk
+
+# Alternative: using jarsigner
 jarsigner -verify -verbose -certs app-release.apk
 
 # View signing certificate

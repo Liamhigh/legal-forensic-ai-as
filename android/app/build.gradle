@@ -18,13 +18,17 @@ android {
     }
     signingConfigs {
         release {
-            // Signing config is set via command line parameters in CI/CD
-            // or via local.properties for local builds
-            if (project.hasProperty('android.injected.signing.store.file')) {
-                storeFile file(project.property('android.injected.signing.store.file'))
-                storePassword project.property('android.injected.signing.store.password')
-                keyAlias project.property('android.injected.signing.key.alias')
-                keyPassword project.property('android.injected.signing.key.password')
+            // Signing config from environment variables (CI/CD) or injected properties
+            def keystoreFile = System.getenv("KEYSTORE_FILE") ?: project.findProperty('android.injected.signing.store.file')
+            def keystorePass = System.getenv("KEYSTORE_PASSWORD") ?: project.findProperty('android.injected.signing.store.password')
+            def keyAliasName = System.getenv("KEY_ALIAS") ?: project.findProperty('android.injected.signing.key.alias')
+            def keyPass = System.getenv("KEY_PASSWORD") ?: project.findProperty('android.injected.signing.key.password')
+            
+            if (keystoreFile && keystorePass && keyAliasName && keyPass) {
+                storeFile file(keystoreFile)
+                storePassword keystorePass
+                keyAlias keyAliasName
+                keyPassword keyPass
             }
         }
     }
@@ -33,9 +37,13 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            // Apply signing config if available
-            if (project.hasProperty('android.injected.signing.store.file')) {
+            
+            // Apply signing config if credentials are available
+            if (signingConfigs.release.storeFile != null) {
                 signingConfig signingConfigs.release
+            } else if (System.getenv("REQUIRE_SIGNED_RELEASE") == "true") {
+                // Fail hard if signing is required but credentials are missing
+                throw new GradleException("❌ Release build requires signing credentials. Configure KEYSTORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD")
             }
         }
     }
