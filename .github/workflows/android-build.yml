@@ -174,10 +174,9 @@ jobs:
         echo "Using apksigner: $APKSIGNER"
         echo ""
         echo "=== APK Signature Verification ==="
-        $APKSIGNER verify --print-certs android/app/build/outputs/apk/release/app-release.apk
         
-        # Verify command succeeded
-        if [ $? -eq 0 ]; then
+        # Run verification and check result directly
+        if $APKSIGNER verify --print-certs android/app/build/outputs/apk/release/app-release.apk; then
           echo ""
           echo "✓ APK signature verified successfully"
           echo "✓ APK is cryptographically signed and ready for distribution"
@@ -205,17 +204,16 @@ jobs:
         # Find the latest apksigner
         APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -V | tail -n 1)
         
-        # Run verification and capture output
-        if ! $APKSIGNER verify android/app/build/outputs/apk/release/app-release.apk 2>&1; then
-          echo ""
+        # Run verification silently and check result
+        if $APKSIGNER verify android/app/build/outputs/apk/release/app-release.apk >/dev/null 2>&1; then
+          echo "✓ Final verification passed: APK is cryptographically signed"
+          echo "✓ APK is ready for Google Play and enterprise distribution"
+        else
           echo "❌ CRITICAL FAILURE: APK on main branch is NOT signed"
           echo "❌ This violates security requirements"
           echo "❌ Unsigned APKs cannot be distributed to production"
           exit 1
         fi
-        
-        echo "✓ Final verification passed: APK is cryptographically signed"
-        echo "✓ APK is ready for Google Play and enterprise distribution"
     
     # ========================================
     # END SIGNING STEPS
