@@ -165,12 +165,49 @@ Provide a thorough forensic analysis with specific legal considerations.`
   }
 
   const handleEvidenceUpload = async (file: File, userMessage?: string) => {
+    // PHASE 1: DOCUMENT RECEIVED - Immediate acknowledgment
+    const receivedMessageId = `scan-received-${Date.now()}`
+    const receivedMessage: ChatMessage = {
+      id: receivedMessageId,
+      role: 'system',
+      content: '📄 Document received\n🔒 Preparing forensic scan…',
+      timestamp: Date.now(),
+      scanningState: {
+        fileName: file.name,
+        phase: 'received'
+      }
+    }
+    setMessages((current) => [...current, receivedMessage])
+
+    // Small delay to show receipt
+    await new Promise(resolve => setTimeout(resolve, 800))
+
     try {
+      // PHASE 2: VERIFYING INTEGRITY
+      setMessages((current) => 
+        current.map(msg => 
+          msg.id === receivedMessageId 
+            ? { ...msg, scanningState: { fileName: file.name, phase: 'verifying' } }
+            : msg
+        )
+      )
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
       // Read file content
       const isTextFile = file.type.startsWith('text/') || 
                          file.name.endsWith('.txt') || 
                          file.name.endsWith('.md')
       const content = isTextFile ? await file.text() : await file.arrayBuffer()
+
+      // PHASE 3: RUNNING FORENSIC ANALYSIS
+      setMessages((current) => 
+        current.map(msg => 
+          msg.id === receivedMessageId 
+            ? { ...msg, scanningState: { fileName: file.name, phase: 'analyzing' } }
+            : msg
+        )
+      )
+      await new Promise(resolve => setTimeout(resolve, 1200))
 
       // Seal the evidence
       const sealed = await sealDocument(content, file.name)
@@ -195,6 +232,16 @@ Provide a thorough forensic analysis with specific legal considerations.`
 
       // Add evidence to case
       addEvidence(evidenceArtifact)
+
+      // PHASE 4: GENERATING CERTIFICATE
+      setMessages((current) => 
+        current.map(msg => 
+          msg.id === receivedMessageId 
+            ? { ...msg, scanningState: { fileName: file.name, phase: 'generating-cert' } }
+            : msg
+        )
+      )
+      await new Promise(resolve => setTimeout(resolve, 1000))
 
       // Generate forensic certificate
       const certificateContent = await generateForensicCertificate(
@@ -238,23 +285,48 @@ Provide a thorough forensic analysis with specific legal considerations.`
       // Update current case state
       setCurrentCase(getCurrentCase())
 
-      // Add system message confirming sealing
-      const systemMessage: ChatMessage = {
-        id: `sys-${Date.now()}`,
+      // PHASE 5: SEALING
+      setMessages((current) => 
+        current.map(msg => 
+          msg.id === receivedMessageId 
+            ? { ...msg, scanningState: { fileName: file.name, phase: 'sealing' } }
+            : msg
+        )
+      )
+      await new Promise(resolve => setTimeout(resolve, 800))
+
+      // Remove scanning indicator and show final result
+      setMessages((current) => 
+        current.filter(msg => msg.id !== receivedMessageId)
+      )
+
+      // PHASE 6: OUTPUT - Show sealed artifacts
+      const sealedMessage: ChatMessage = {
+        id: `sealed-${Date.now()}`,
         role: 'system',
-        content: '✅ Evidence sealed and added to case',
+        content: '✅ Document scanned and sealed\n🔒 Certificate generated and bound\n📁 Added to current case',
         timestamp: Date.now(),
-        evidenceSealed: {
+        sealedArtifacts: {
           fileName: file.name,
-          hash: sealed.seal.documentHash,
-          certificateGenerated: true
+          evidenceHash: sealed.seal.documentHash,
+          certificateId: certificateArtifact.id,
+          certificateHash: certificateArtifact.certificateHash,
+          bundleHash: certificateArtifact.bundleHash,
+          documentContent: sealed.originalContent,
+          certificateContent: certificateContent
         }
       }
 
-      setMessages((current) => [...current, systemMessage])
+      setMessages((current) => [...current, sealedMessage])
 
     } catch (error) {
       console.error('Error processing evidence:', error)
+      
+      // Remove scanning indicator
+      setMessages((current) => 
+        current.filter(msg => msg.id !== receivedMessageId)
+      )
+      
       toast.error('Failed to seal evidence', {
         description: (error as Error).message
       })

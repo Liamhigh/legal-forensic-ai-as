@@ -43,6 +43,8 @@ export function UnifiedInput({ onSubmit, disabled, placeholder }: UnifiedInputPr
     setAttachedFiles([])
   }
 
+  const isProcessingFiles = disabled && attachedFiles.length > 0
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -98,7 +100,7 @@ export function UnifiedInput({ onSubmit, disabled, placeholder }: UnifiedInputPr
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyPress}
-          placeholder={placeholder || "Add evidence or ask a question..."}
+          placeholder={isProcessingFiles ? "Processing files..." : (placeholder || "Add evidence or ask a question...")}
           disabled={disabled}
           className="flex-1 bg-background border-input focus-visible:ring-accent rounded-xl"
         />

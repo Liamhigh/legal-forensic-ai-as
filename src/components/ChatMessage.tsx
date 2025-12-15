@@ -4,6 +4,8 @@
  */
 
 import { CheckCircle, Lock, FileText } from '@phosphor-icons/react'
+import { DocumentScannerIndicator } from '@/components/DocumentScannerIndicator'
+import { SealedArtifacts } from '@/components/SealedArtifacts'
 
 export interface ChatMessage {
   id: string
@@ -16,6 +18,19 @@ export interface ChatMessage {
     certificateGenerated: boolean
   }
   sealed?: boolean
+  sealedArtifacts?: {
+    fileName: string
+    evidenceHash: string
+    certificateId: string
+    certificateHash: string
+    bundleHash: string
+    documentContent?: string | ArrayBuffer
+    certificateContent?: string
+  }
+  scanningState?: {
+    fileName: string
+    phase: 'received' | 'verifying' | 'analyzing' | 'generating-cert' | 'sealing'
+  }
 }
 
 interface ChatMessageProps {
@@ -23,6 +38,57 @@ interface ChatMessageProps {
 }
 
 export function ChatMessageComponent({ message }: ChatMessageProps) {
+  // Scanner state indicator
+  if (message.role === 'system' && message.scanningState) {
+    return (
+      <DocumentScannerIndicator
+        fileName={message.scanningState.fileName}
+        phase={message.scanningState.phase}
+      />
+    )
+  }
+
+  // Sealed artifacts display
+  if (message.role === 'system' && message.sealedArtifacts) {
+    const downloadDocument = () => {
+      if (!message.sealedArtifacts?.documentContent) return
+      const blob = new Blob([message.sealedArtifacts.documentContent], { type: 'text/plain' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `sealed_${message.sealedArtifacts.fileName}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    }
+
+    const downloadCertificate = () => {
+      if (!message.sealedArtifacts?.certificateContent) return
+      const blob = new Blob([message.sealedArtifacts.certificateContent], { type: 'text/plain' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `certificate_${message.sealedArtifacts.certificateId}.txt`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    }
+
+    return (
+      <SealedArtifacts
+        fileName={message.sealedArtifacts.fileName}
+        evidenceHash={message.sealedArtifacts.evidenceHash}
+        certificateId={message.sealedArtifacts.certificateId}
+        certificateHash={message.sealedArtifacts.certificateHash}
+        bundleHash={message.sealedArtifacts.bundleHash}
+        onDownloadDocument={message.sealedArtifacts.documentContent ? downloadDocument : undefined}
+        onDownloadCertificate={message.sealedArtifacts.certificateContent ? downloadCertificate : undefined}
+      />
+    )
+  }
+
   if (message.role === 'system') {
     // System messages for evidence sealing feedback
     return (
