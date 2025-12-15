@@ -43,7 +43,7 @@ android {
                 signingConfig signingConfigs.release
             } else if (System.getenv("REQUIRE_SIGNED_RELEASE") == "true") {
                 // Fail hard if signing is required but credentials are missing
-                throw new GradleException("❌ Release build requires signing credentials. Configure KEYSTORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD")
+                throw new GradleException("❌ Release build requires signing credentials. Configure KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD")
             }
         }
     }
