@@ -2,46 +2,60 @@
 
 This document provides explicit reasoning about failure paths in the release workflow, particularly when secrets are missing or misconfigured.
 
+## ⚠️ CRITICAL CHANGE: Signed Builds Are Now REQUIRED
+
+**As of the latest update, the release workflow REQUIRES signed APKs and will FAIL if signing credentials are not configured.**
+
+There is no longer a fallback to unsigned builds. This ensures:
+- ✅ Only production-ready APKs are built
+- ✅ No accidental unsigned releases
+- ✅ Clear failure when secrets are missing
+- ✅ Consistent, secure build process
+
 ## Workflow File
 `.github/workflows/android-build.yml` - `build-release` job
 
 ## Failure Scenarios
 
-### Scenario 1: No Signing Secrets Configured
+### Scenario 1: No Signing Secrets Configured ⚠️ CRITICAL
 
 **Condition:** `secrets.KEYSTORE_BASE64` is empty or not set
 
 **Workflow Behavior:**
 ```yaml
-- name: Decode Keystore
-  if: ${{ secrets.KEYSTORE_BASE64 }}  # ❌ SKIPPED
-  
-- name: Build signed release APK
-  if: ${{ secrets.KEYSTORE_BASE64 }}  # ❌ SKIPPED
-  
-- name: Verify APK signature
-  if: ${{ secrets.KEYSTORE_BASE64 }}  # ❌ SKIPPED
-  
-- name: Build unsigned release APK
-  if: ${{ !secrets.KEYSTORE_BASE64 }} # ✅ RUNS
+- name: Check signing credentials
+  run: |
+    if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+      echo "❌ ERROR: Signing credentials not configured"
+      exit 1  # ❌ WORKFLOW FAILS HERE
+    fi
 ```
 
 **Result:**
-- Workflow SUCCEEDS ✅
-- Produces UNSIGNED APK
-- APK uploaded to artifacts
-- Release may be created (if on main branch)
+- Workflow FAILS ❌ at the "Check signing credentials" step
+- Build stops immediately
+- NO APK produced (signed or unsigned)
+- No artifacts uploaded
+- No release created
+- Build status: FAILED
 
-**⚠️ Critical Issues:**
-1. **Cannot install on production devices** - Unsigned APKs won't install outside debug mode
-2. **Cannot publish to Google Play** - Store requires signed APKs
-3. **No security verification** - APK could be tampered with
-4. **Silent degradation** - Workflow succeeds but artifact is unusable for production
+**⚠️ Critical Impact:**
+1. **Workflow will not proceed** - Fails before build even starts
+2. **CI clearly indicates missing credentials** - Not a silent failure
+3. **Forces proper configuration** - Must set up secrets to release
+4. **No accidental unsigned releases** - Prevents production deployment of unsigned APKs
 
 **CI vs Local Divergence:**
-- CI will complete successfully
-- Local simulation will detect and warn about missing secrets
-- Both environments produce the same unsigned APK
+- CI will fail immediately at credential check
+- Local simulation will detect and report the same failure
+- Both environments fail consistently
+
+**How to Fix:**
+Configure these GitHub repository secrets:
+- `KEYSTORE_BASE64` - Base64-encoded keystore file
+- `KEYSTORE_PASSWORD` - Keystore password
+- `KEY_ALIAS` - Key alias name
+- `KEY_PASSWORD` - Key password
 
 ---
 
@@ -55,19 +69,27 @@ This document provides explicit reasoning about failure paths in the release wor
 
 **Workflow Behavior:**
 ```yaml
+- name: Check signing credentials
+  run: |
+    if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+      exit 1
+    fi
+    echo "✅ Signing credentials are configured"  # ✅ PASSES (only checks KEYSTORE_BASE64)
+
 - name: Decode Keystore
-  if: ${{ secrets.KEYSTORE_BASE64 }}  # ✅ RUNS (keystore decoded)
+  run: |
+    echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks  # ✅ SUCCEEDS
   
 - name: Build signed release APK
-  if: ${{ secrets.KEYSTORE_BASE64 }}  # ✅ RUNS but FAILS
   env:
     KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}  # Empty or wrong
     KEY_ALIAS: ${{ secrets.KEY_ALIAS }}                  # Empty or wrong
     KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}            # Empty or wrong
+  run: ./gradlew assembleRelease ...  # ❌ FAILS
 ```
 
 **Result:**
-- Workflow FAILS ❌
+- Workflow FAILS ❌ at Gradle build step
 - Gradle build fails with keystore error
 - Error: "Keystore password incorrect" or "Key alias not found"
 - No APK produced

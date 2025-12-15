@@ -292,9 +292,9 @@ fi
 # ========================================
 # STEP 8: Signing Configuration Check
 # ========================================
-print_section "STEP 8: Signing Configuration Analysis"
+print_section "STEP 8: Check Signing Credentials"
 
-print_info "Analyzing signing configuration..."
+print_info "Checking if signing credentials are configured..."
 echo ""
 
 # Check for keystore in secrets (simulated)
@@ -304,25 +304,30 @@ KEY_ALIAS="${KEY_ALIAS:-}"
 KEY_PASSWORD="${KEY_PASSWORD:-}"
 
 if [ -z "$KEYSTORE_BASE64" ]; then
-    print_warning "KEYSTORE_BASE64 environment variable not set"
+    print_error "KEYSTORE_BASE64 environment variable not set"
     echo "   In CI, this comes from: secrets.KEYSTORE_BASE64"
     echo ""
-    echo "   📋 FAILURE PATH WITHOUT SECRETS:"
-    echo "   1. Keystore decode step will be SKIPPED (if condition false)"
-    echo "   2. Signed release APK build step will be SKIPPED (if condition false)"
-    echo "   3. APK signature verification step will be SKIPPED (if condition false)"
-    echo "   4. UNSIGNED release APK build step will RUN instead"
-    echo "   5. The workflow will complete but produce an UNSIGNED APK"
+    echo "   ❌ FAILURE: Release builds MUST be signed"
     echo ""
-    echo "   ⚠️  CRITICAL: The unsigned APK CANNOT be installed on production devices"
-    echo "   ⚠️  The unsigned APK CANNOT be published to Google Play Store"
+    echo "   📋 WHAT HAPPENS IN CI WITHOUT SECRETS:"
+    echo "   1. 'Check signing credentials' step will FAIL"
+    echo "   2. Workflow execution will STOP"
+    echo "   3. No APK will be produced"
+    echo "   4. Build status will be FAILED"
+    echo ""
+    echo "   ⚠️  CRITICAL: The workflow now REQUIRES signing credentials"
+    echo "   Configure the following secrets in GitHub:"
+    echo "     - KEYSTORE_BASE64"
+    echo "     - KEYSTORE_PASSWORD"
+    echo "     - KEY_ALIAS"
+    echo "     - KEY_PASSWORD"
     echo ""
     
-    # Try to find keystore locally
+    # Try to find keystore locally for local development
     if [ -f "android/app/keystore.jks" ]; then
         print_info "Found keystore file locally: android/app/keystore.jks"
         print_warning "This file should NOT be committed (it's in .gitignore)"
-        echo "   We'll attempt to use it for local simulation..."
+        echo "   Attempting to use it for local simulation..."
         KEYSTORE_FILE="app/keystore.jks"
         
         # Check for local signing.properties (common practice)
@@ -344,9 +349,25 @@ if [ -z "$KEYSTORE_BASE64" ]; then
                         ;;
                 esac
             done < android/signing.properties
+            # Re-read the variables after sourcing
+            KEYSTORE_PASSWORD="${KEYSTORE_PASSWORD:-}"
+            KEY_ALIAS="${KEY_ALIAS:-}"
+            KEY_PASSWORD="${KEY_PASSWORD:-}"
+        fi
+        
+        if [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            print_error "Local keystore found but signing credentials incomplete"
+            echo "   The workflow would FAIL in CI"
+            echo ""
+            echo "   For local development, you can continue with partial simulation"
+        else
+            print_info "Using local keystore for simulation"
         fi
     else
         print_info "No local keystore found at android/app/keystore.jks"
+        print_error "Cannot simulate signed build without credentials"
+        echo ""
+        echo "   ❌ CI WILL FAIL at the 'Check signing credentials' step"
     fi
 else
     print_success "KEYSTORE_BASE64 is set"
@@ -400,9 +421,9 @@ print_section "STEP 9: Gradle assembleRelease"
 
 cd android
 
-# Determine which build path to simulate
+# The workflow now REQUIRES signing - no unsigned fallback
 if [ -n "$KEYSTORE_FILE" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
-    print_info "Simulating: Build SIGNED release APK"
+    print_info "Building SIGNED release APK (as required by workflow)"
     print_info "Running Gradle with signing parameters..."
     echo ""
     
@@ -421,6 +442,7 @@ if [ -n "$KEYSTORE_FILE" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ]
         -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
         -Pandroid.injected.signing.key.password="$KEY_PASSWORD"; then
         print_success "Gradle assembleRelease completed successfully"
+        print_success "APK is SIGNED and ready for production"
     else
         print_error "Gradle assembleRelease failed"
         echo "   This would cause CI to fail at the 'Build signed release APK' step"
@@ -433,17 +455,15 @@ if [ -n "$KEYSTORE_FILE" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ]
         echo "   - Gradle configuration issues"
     fi
 else
-    print_info "Simulating: Build UNSIGNED release APK (no signing credentials)"
-    print_info "Running: ./gradlew assembleRelease"
+    print_error "Cannot build release APK without signing credentials"
     echo ""
-    
-    if ./gradlew assembleRelease; then
-        print_success "Gradle assembleRelease completed successfully (unsigned)"
-        print_warning "APK is UNSIGNED - cannot be installed on production devices"
-    else
-        print_error "Gradle assembleRelease failed"
-        echo "   This would cause CI to fail at the 'Build unsigned release APK' step"
-    fi
+    echo "   ❌ CI WILL FAIL: The workflow now REQUIRES signed builds"
+    echo "   There is no fallback to unsigned builds"
+    echo ""
+    echo "   In CI, the workflow will fail at the 'Check signing credentials' step"
+    echo "   before even attempting to build the APK."
+    echo ""
+    print_warning "Skipping Gradle build (would fail in CI anyway)"
 fi
 
 cd ..
@@ -483,87 +503,78 @@ fi
 print_section "STEP 11: APK Signature Verification"
 
 if [ -f "$APK_PATH" ]; then
-    if [ -n "$KEYSTORE_FILE" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
-        print_info "Attempting to verify APK signature..."
-        
-        # Find apksigner
-        APKSIGNER=""
-        
-        if [ -n "$ANDROID_HOME" ]; then
-            # Try to find apksigner in Android SDK
-            APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner 2>/dev/null | sort -V | tail -n 1)
-        fi
-        
-        if [ -z "$APKSIGNER" ]; then
-            # Try common locations with existence checks
-            if [ -n "$HOME" ]; then
-                for bt_dir in "$HOME/Android/Sdk/build-tools"/* "$HOME/Library/Android/sdk/build-tools"/*; do
-                    # Check if directory exists and contains apksigner
-                    if [ -d "$bt_dir" ] && [ -f "$bt_dir/apksigner" ]; then
-                        APKSIGNER="$bt_dir/apksigner"
-                        break
-                    fi
-                done
-            fi
-        fi
-        
-        if [ -n "$APKSIGNER" ] && [ -f "$APKSIGNER" ]; then
-            print_success "Found apksigner: $APKSIGNER"
-            echo ""
-            print_info "Running: apksigner verify --print-certs $APK_PATH"
-            echo ""
-            
-            if "$APKSIGNER" verify --print-certs "$APK_PATH"; then
-                print_success "APK signature verification PASSED"
-                echo ""
-                echo "   ✅ The APK is properly signed"
-                echo "   ✅ This APK can be installed on production devices"
-                echo "   ✅ This APK can be published to Google Play Store"
-            else
-                print_error "APK signature verification FAILED"
-                echo ""
-                echo "   ❌ The APK signature is invalid or missing"
-                echo "   ❌ This would cause CI to fail at the 'Verify APK signature' step"
-                echo ""
-                echo "   Common reasons:"
-                echo "   - APK was not actually signed during build"
-                echo "   - Signing configuration was incorrect"
-                echo "   - Wrong keystore was used"
-            fi
-        else
-            print_warning "apksigner not found"
-            echo "   Cannot verify APK signature locally"
-            echo "   In CI, apksigner is available via android-actions/setup-android@v3"
-            echo ""
-            echo "   📋 SIGNATURE VERIFICATION SIMULATION:"
-            
-            # Try to check if APK has signing info using zipinfo
-            if command -v zipinfo &> /dev/null; then
-                if zipinfo "$APK_PATH" | grep -q "META-INF/.*\\.RSA\|META-INF/.*\\.DSA\|META-INF/.*\\.EC"; then
-                    print_info "APK contains signing certificates (META-INF/*.RSA/DSA/EC)"
-                    echo "   The APK appears to be signed"
-                else
-                    print_warning "APK does not contain signing certificates"
-                    echo "   The APK appears to be UNSIGNED"
+    print_info "Verifying APK signature (REQUIRED by workflow)..."
+    
+    # Find apksigner
+    APKSIGNER=""
+    
+    if [ -n "$ANDROID_HOME" ]; then
+        # Try to find apksigner in Android SDK
+        APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner 2>/dev/null | sort -V | tail -n 1)
+    fi
+    
+    if [ -z "$APKSIGNER" ]; then
+        # Try common locations with existence checks
+        if [ -n "$HOME" ]; then
+            for bt_dir in "$HOME/Android/Sdk/build-tools"/* "$HOME/Library/Android/sdk/build-tools"/*; do
+                # Check if directory exists and contains apksigner
+                if [ -d "$bt_dir" ] && [ -f "$bt_dir/apksigner" ]; then
+                    APKSIGNER="$bt_dir/apksigner"
+                    break
                 fi
-            else
-                print_info "Cannot determine if APK is signed (zipinfo not available)"
-            fi
+            done
+        fi
+    fi
+    
+    if [ -n "$APKSIGNER" ] && [ -f "$APKSIGNER" ]; then
+        print_success "Found apksigner: $APKSIGNER"
+        echo ""
+        print_info "Running: apksigner verify --print-certs $APK_PATH"
+        echo ""
+        
+        if "$APKSIGNER" verify --print-certs "$APK_PATH"; then
+            print_success "APK signature verification PASSED"
+            echo ""
+            echo "   ✅ The APK is properly signed"
+            echo "   ✅ This APK can be installed on production devices"
+            echo "   ✅ This APK can be published to Google Play Store"
+        else
+            print_error "APK signature verification FAILED"
+            echo ""
+            echo "   ❌ The APK signature is invalid or missing"
+            echo "   ❌ This would cause CI to fail at the 'Verify APK signature' step"
+            echo ""
+            echo "   Common reasons:"
+            echo "   - APK was not actually signed during build"
+            echo "   - Signing configuration was incorrect"
+            echo "   - Wrong keystore was used"
         fi
     else
-        print_info "Skipping signature verification (no signing credentials)"
-        echo "   In CI, this step would be SKIPPED (if condition false)"
+        print_warning "apksigner not found"
+        echo "   Cannot verify APK signature locally"
+        echo "   In CI, apksigner is available via android-actions/setup-android@v3"
+        echo "   and the verification step will run"
         echo ""
-        print_warning "APK is UNSIGNED"
-        echo ""
-        echo "   📋 UNSIGNED APK LIMITATIONS:"
-        echo "   ❌ Cannot be installed on production devices (non-debug)"
-        echo "   ❌ Cannot be published to Google Play Store"
-        echo "   ❌ Will show 'App not installed' error on most devices"
-        echo "   ✅ Can be installed on debug builds with 'adb install'"
+        echo "   📋 SIGNATURE VERIFICATION SIMULATION:"
+        
+        # Try to check if APK has signing info using zipinfo
+        if command -v zipinfo &> /dev/null; then
+            if zipinfo "$APK_PATH" | grep -q "META-INF/.*\\.RSA\|META-INF/.*\\.DSA\|META-INF/.*\\.EC"; then
+                print_info "APK contains signing certificates (META-INF/*.RSA/DSA/EC)"
+                echo "   The APK appears to be signed"
+                echo "   ✅ CI verification should PASS"
+            else
+                print_error "APK does not contain signing certificates"
+                echo "   The APK appears to be UNSIGNED"
+                echo "   ❌ CI verification will FAIL"
+            fi
+        else
+            print_info "Cannot determine if APK is signed (zipinfo not available)"
+        fi
     fi
 else
     print_error "Cannot verify APK signature - APK file not found"
+    echo "   The workflow would have already failed before reaching this step"
 fi
 
 # ========================================
@@ -631,9 +642,9 @@ echo "📋 CI vs Local Divergence Analysis:"
 echo ""
 
 if [ -n "$KEYSTORE_BASE64" ]; then
-    echo -e "${GREEN}✅ Signing credentials available (matching CI with secrets)${NC}"
+    echo -e "${GREEN}✅ Signing credentials available (matching CI requirements)${NC}"
 else
-    echo -e "${YELLOW}⚠️  No signing credentials (diverges from CI with secrets configured)${NC}"
+    echo -e "${RED}❌ No signing credentials (CI WILL FAIL - signing is REQUIRED)${NC}"
 fi
 
 if [ "$NODE_MAJOR" -ge 18 ] 2>/dev/null; then
@@ -652,21 +663,28 @@ echo ""
 echo "📝 Recommendations:"
 echo ""
 
-if [ $ISSUES_FOUND -gt 0 ]; then
-    echo "1. Fix all errors before pushing to trigger CI"
-fi
-
-if [ -z "$KEYSTORE_BASE64" ] && [ $ISSUES_FOUND -eq 0 ]; then
-    echo "1. To fully simulate signed release builds, set these environment variables:"
+if [ -z "$KEYSTORE_BASE64" ]; then
+    echo "1. ⚠️  CRITICAL: Configure signing credentials to avoid CI failures"
+    echo "   The workflow now REQUIRES signed builds and will FAIL without credentials."
+    echo ""
+    echo "   Set these environment variables for local testing:"
     echo "   export KEYSTORE_BASE64='<base64-encoded-keystore>'"
     echo "   export KEYSTORE_PASSWORD='<your-keystore-password>'"
     echo "   export KEY_ALIAS='<your-key-alias>'"
     echo "   export KEY_PASSWORD='<your-key-password>'"
     echo ""
-    echo "   Or create android/signing.properties with:"
+    echo "   Or for CI, configure these GitHub secrets:"
+    echo "   - KEYSTORE_BASE64"
+    echo "   - KEYSTORE_PASSWORD"
+    echo "   - KEY_ALIAS"
+    echo "   - KEY_PASSWORD"
+    echo ""
+    echo "   Or create android/signing.properties for local development:"
     echo "   KEYSTORE_PASSWORD=your-password"
     echo "   KEY_ALIAS=your-alias"
     echo "   KEY_PASSWORD=your-password"
+elif [ $ISSUES_FOUND -gt 0 ]; then
+    echo "1. Fix all errors before pushing to trigger CI"
 fi
 
 if [ $WARNINGS_FOUND -gt 0 ]; then

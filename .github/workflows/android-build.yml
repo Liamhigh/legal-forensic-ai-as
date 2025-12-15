@@ -118,15 +118,27 @@ jobs:
     # DO NOT MODIFY WITHOUT SECURITY REVIEW
     # ========================================
     
+    # Check that signing credentials are configured
+    - name: Check signing credentials
+      run: |
+        if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+          echo "❌ ERROR: Signing credentials not configured"
+          echo "Release builds MUST be signed. Configure the following secrets:"
+          echo "  - KEYSTORE_BASE64"
+          echo "  - KEYSTORE_PASSWORD"
+          echo "  - KEY_ALIAS"
+          echo "  - KEY_PASSWORD"
+          exit 1
+        fi
+        echo "✅ Signing credentials are configured"
+    
     # Decode keystore from secrets
     - name: Decode Keystore
-      if: ${{ secrets.KEYSTORE_BASE64 }}
       run: |
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
 
     # Build signed release APK
     - name: Build signed release APK
-      if: ${{ secrets.KEYSTORE_BASE64 }}
       working-directory: ./android
       env:
         KEYSTORE_FILE: app/keystore.jks
@@ -143,7 +155,6 @@ jobs:
 
     # Verify APK signature (CRITICAL - ensures APK is actually signed)
     - name: Verify APK signature
-      if: ${{ secrets.KEYSTORE_BASE64 }}
       run: |
         # Find the latest apksigner
         APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -V | tail -n 1)
@@ -153,12 +164,6 @@ jobs:
         fi
         echo "Using apksigner: $APKSIGNER"
         $APKSIGNER verify --print-certs android/app/build/outputs/apk/release/app-release.apk
-
-    # Build unsigned release if no keystore (DEBUG ONLY)
-    - name: Build unsigned release APK
-      if: ${{ !secrets.KEYSTORE_BASE64 }}
-      working-directory: ./android
-      run: ./gradlew assembleRelease
     
     # ========================================
     # END SIGNING STEPS
