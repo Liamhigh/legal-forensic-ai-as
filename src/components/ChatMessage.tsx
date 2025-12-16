@@ -144,12 +144,12 @@ export function ChatMessageComponent({ message }: ChatMessageProps) {
   return (
     <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}>
       <div
-        className={`max-w-full rounded-2xl px-5 py-4 ${
+        className={`max-w-full rounded-2xl px-4 sm:px-5 py-3 sm:py-4 ${
           message.role === 'user'
             ? 'bg-primary text-primary-foreground'
             : 'bg-transparent text-card-foreground'
         }`}
-        style={{ maxWidth: 'var(--max-width-chat, 680px)' }}
+        style={{ maxWidth: 'var(--max-width-chat, 680px)', width: '100%' }}
       >
         {message.sealed && (
           <div className="flex items-center gap-2 mb-3 text-sm opacity-80">

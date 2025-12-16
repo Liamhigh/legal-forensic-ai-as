@@ -7,7 +7,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { User, Building, SignOut, ShieldCheck, LockKey } from '@phosphor-icons/react'
+import { Building, SignOut, ShieldCheck, LockKey } from '@phosphor-icons/react'
 import { 
   getCurrentSession, 
   authenticateInstitutionalUser, 
@@ -47,8 +47,8 @@ export function SessionStatus() {
   const handleLogout = () => {
     const newSession = logout()
     setSession(newSession)
-    toast.info('Logged out - returned to public access', {
-      description: 'You can only process personal matters'
+    toast.info('Logged out', {
+      description: 'Please login again to continue'
     })
   }
 
@@ -125,22 +125,14 @@ export function SessionStatus() {
           </Button>
         </>
       ) : (
-        <>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-forensic-info-bg rounded-md border border-forensic-info-border">
-            <User size={16} weight="regular" className="text-forensic-info" />
-            <span className="text-xs font-semibold text-forensic-info-text uppercase tracking-wide">
-              Public Access
-            </span>
-          </div>
-          <Button
-            onClick={() => setShowLogin(true)}
-            variant="ghost"
-            size="sm"
-            className="text-xs text-muted-foreground hover:text-foreground"
-          >
-            Institutional Login
-          </Button>
-        </>
+        <Button
+          onClick={() => setShowLogin(true)}
+          variant="ghost"
+          size="sm"
+          className="text-xs text-muted-foreground hover:text-foreground"
+        >
+          Institutional Login
+        </Button>
       )}
     </div>
   )

@@ -48,7 +48,7 @@ export function ReportDisplay({
   ]
   
   return (
-    <Card className="bg-card border border-border p-4 space-y-3">
+    <Card className="bg-card border border-border p-3 sm:p-4 space-y-3 w-full">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3 flex-1">
@@ -112,18 +112,18 @@ export function ReportDisplay({
       
       {/* Suggested questions */}
       {onAskQuestion && (
-        <div className="space-y-2">
+        <div className="space-y-2 w-full">
           <p className="text-xs text-muted-foreground font-medium">
             Ask about this report:
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 w-full">
             {suggestedQuestions.map((question, index) => (
               <Button
                 key={index}
                 variant="outline"
                 size="sm"
                 onClick={() => onAskQuestion(question)}
-                className="text-xs h-7"
+                className="text-xs h-auto py-1.5 px-2.5 whitespace-normal text-left min-h-7"
               >
                 {question}
               </Button>
