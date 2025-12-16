@@ -19,8 +19,16 @@ import {
   addConversationEntry,
   clearCase
 } from '@/services/caseManagement'
-import { recordSessionEvent, getCurrentSealedSession } from '@/services/sessionSealing'
+import { recordSessionEvent, getCurrentSealedSession, sealSession } from '@/services/sessionSealing'
 import { detectAccusation, generateConsistencyReport, formatConsistencyReport } from '@/services/temporalCorrelation'
+import { 
+  isEmailDraftRequest, 
+  extractEmailComponents, 
+  createDraftedEmail, 
+  sealDraftedEmail,
+  getEmailSummary,
+  downloadSealedEmail
+} from '@/services/emailSealing'
 
 const SUGGESTED_PROMPTS = [
   "Analyze the admissibility of digital evidence in this case",
@@ -62,6 +70,11 @@ function App() {
       }
       setMessages([welcomeMessage])
     }
+    
+    // Set up cleanup on unmount - seal session when app closes
+    return () => {
+      handleSessionClose()
+    }
   }, [])
 
   const handleSubmit = async (message: string, files?: File[]) => {
@@ -78,6 +91,9 @@ function App() {
     // Detect intent
     const intent = detectIntent(message, !!files && files.length > 0)
     const shouldSeal = shouldSealContent(intent)
+    
+    // Check if this is an email draft request
+    const isEmailRequest = isEmailDraftRequest(message)
 
     // Check for accusations/timeline disputes (passive detection)
     const accusationDetection = detectAccusation(message)
@@ -107,7 +123,8 @@ function App() {
     await recordSessionEvent('user_interaction', {
       messageLength: message.length,
       hasFiles: !!files && files.length > 0,
-      accusationDetected: accusationDetection.detected
+      accusationDetected: accusationDetection.detected,
+      isEmailRequest
     })
     
     // Add to conversation log
@@ -152,7 +169,16 @@ function App() {
       
       // Adjust system prompt based on intent
       let systemPrompt = ''
-      if (intent === IntentType.FORENSIC_OUTPUT) {
+      if (isEmailRequest) {
+        systemPrompt = `You are Verum Omnis, a forensic legal assistant. The user is requesting you to draft an email.
+
+${forensicRules}
+
+CRITICAL: Draft the email in a professional format with clear To:, Subject:, and body sections.
+Do NOT add follow-up questions, suggestions, or commentary outside the email itself.
+
+User request: ${message}`
+      } else if (intent === IntentType.FORENSIC_OUTPUT) {
         systemPrompt = `You are Verum Omnis, a forensic legal assistant. The user is requesting you to draft or generate a legal document.
 
 ${forensicRules}
@@ -182,8 +208,11 @@ Provide a thorough forensic analysis with specific legal considerations.`
       const prompt = (window as any).spark.llmPrompt`${systemPrompt}`
       const response = await (window as any).spark.llm(prompt, 'gpt-4o')
 
-      // For forensic output, seal the response
-      if (shouldSeal) {
+      // For email drafts, seal as email
+      if (isEmailRequest) {
+        await handleEmailDraft(response, message)
+      } else if (shouldSeal) {
+        // For other forensic output, seal as document
         await handleForensicOutput(response, message)
       } else {
         // Normal conversation - just add assistant message
@@ -265,6 +294,10 @@ Provide a thorough forensic analysis with specific legal considerations.`
           bundleHash: result.bundleHash,
           documentContent: result.documentContent,
           certificateContent: result.certificateContent
+        },
+        onAskQuestion: (question: string) => {
+          // User clicked on a suggested question - submit it
+          handleSubmit(question)
         }
       }
 
@@ -333,6 +366,90 @@ Provide a thorough forensic analysis with specific legal considerations.`
       addConversationEntry('assistant', content, false)
 
       toast.error('Document generated but sealing failed')
+    }
+  }
+
+  const handleEmailDraft = async (content: string, originalRequest: string) => {
+    try {
+      // Extract email components
+      const components = extractEmailComponents(originalRequest, content)
+      
+      // Create drafted email
+      const draftedEmail = createDraftedEmail(
+        components.to,
+        components.subject,
+        components.body
+      )
+      
+      // Seal the email
+      const sealedEmail = await sealDraftedEmail(draftedEmail, currentCase.caseId)
+      
+      // Add sealed email to conversation entry
+      addConversationEntry('assistant', content, true)
+      
+      // Show the email content in chat
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: content,
+        timestamp: Date.now(),
+        sealed: true
+      }
+      
+      setMessages((current) => [...current, assistantMessage])
+      
+      // Show email sealing summary
+      const summaryMessage: ChatMessage = {
+        id: `email-summary-${Date.now()}`,
+        role: 'system',
+        content: getEmailSummary(sealedEmail),
+        timestamp: Date.now()
+      }
+      
+      setMessages((current) => [...current, summaryMessage])
+      
+      // Offer download
+      toast.success('Email draft sealed', {
+        description: 'Download sealed PDF to send as attachment',
+        action: {
+          label: 'Download',
+          onClick: () => downloadSealedEmail(sealedEmail)
+        }
+      })
+      
+    } catch (error) {
+      console.error('Error sealing email:', error)
+      
+      // Still show the content but without sealing
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: content,
+        timestamp: Date.now(),
+        sealed: false
+      }
+
+      setMessages((current) => [...current, assistantMessage])
+      addConversationEntry('assistant', content, false)
+
+      toast.error('Email drafted but sealing failed')
+    }
+  }
+
+  const handleSessionClose = async () => {
+    try {
+      // Seal the current session
+      await sealSession()
+      
+      // Record session end event
+      await recordSessionEvent('session_end', {
+        messageCount: messages.length,
+        evidenceCount: currentCase.evidence.length
+      })
+      
+      console.log('Session sealed on app close')
+    } catch (error) {
+      console.error('Failed to seal session:', error)
     }
   }
 
