@@ -6,7 +6,7 @@
 
 import { scannerStateMachine, ScannerResult } from './scannerStateMachine'
 import { sealDocument } from './documentSealing'
-import { generateNineBrainAnalysis, generateForensicCertificate } from './forensicCertificate'
+import { generateNineBrainAnalysis, generateForensicCertificate, type NineBrainAnalysis } from './forensicCertificate'
 import { 
   addEvidence, 
   addCertificate, 
@@ -142,7 +142,7 @@ export async function scanEvidence(
     const aiAvailable = isAIAvailable()
     
     // Generate analysis - baseline if AI unavailable, enhanced if available
-    let nineBrainAnalysis: string | typeof import('./forensicCertificate').NineBrainAnalysis
+    let nineBrainAnalysis: string | NineBrainAnalysis
     let analysisType: 'baseline' | 'ai' = 'baseline'
     
     if (aiAvailable) {
