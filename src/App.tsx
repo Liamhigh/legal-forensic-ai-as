@@ -19,6 +19,8 @@ import {
   addConversationEntry,
   clearCase
 } from '@/services/caseManagement'
+import { recordSessionEvent, getCurrentSealedSession } from '@/services/sessionSealing'
+import { detectAccusation, generateConsistencyReport, formatConsistencyReport } from '@/services/temporalCorrelation'
 
 const SUGGESTED_PROMPTS = [
   "Analyze the admissibility of digital evidence in this case",
@@ -39,10 +41,16 @@ function App() {
     }
   }, [messages])
 
-  // Initialize case on mount
+  // Initialize case and session on mount
   useEffect(() => {
     const caseData = getCurrentCase()
     setCurrentCase(caseData)
+    
+    // Record session start
+    recordSessionEvent('session_start', {
+      caseId: caseData.caseId,
+      startTime: caseData.startTime
+    })
     
     // Show welcome message
     if (messages.length === 0) {
@@ -71,6 +79,9 @@ function App() {
     const intent = detectIntent(message, !!files && files.length > 0)
     const shouldSeal = shouldSealContent(intent)
 
+    // Check for accusations/timeline disputes (passive detection)
+    const accusationDetection = detectAccusation(message)
+    
     // Handle file uploads (evidence)
     if (files && files.length > 0) {
       for (const file of files) {
@@ -92,8 +103,41 @@ function App() {
 
     setMessages((current) => [...current, userMessage])
     
+    // Record user interaction event
+    await recordSessionEvent('user_interaction', {
+      messageLength: message.length,
+      hasFiles: !!files && files.length > 0,
+      accusationDetected: accusationDetection.detected
+    })
+    
     // Add to conversation log
     addConversationEntry('user', message, shouldSeal)
+    
+    // If accusation detected, generate consistency report automatically
+    if (accusationDetection.detected) {
+      try {
+        const report = await generateConsistencyReport(message)
+        const formattedReport = formatConsistencyReport(report)
+        
+        // Show consistency report
+        const reportMessage: ChatMessage = {
+          id: `consistency-${Date.now()}`,
+          role: 'system',
+          content: `🔍 Timeline correlation detected\n\nA consistency report has been automatically generated based on your sealed session records.\n\n${formattedReport}`,
+          timestamp: Date.now(),
+          sealed: true
+        }
+        
+        setMessages((current) => [...current, reportMessage])
+        
+        toast.info('Consistency report generated', {
+          description: 'Temporal correlation analysis completed'
+        })
+      } catch (error) {
+        console.log('Consistency report not generated:', error)
+        // Silent failure - this is optional augmentation
+      }
+    }
     
     setIsLoading(true)
 

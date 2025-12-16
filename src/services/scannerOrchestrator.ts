@@ -14,6 +14,7 @@ import {
   type EvidenceArtifact,
   type ForensicCertificate 
 } from './caseManagement'
+import { recordSessionEvent } from './sessionSealing'
 
 /**
  * Delay helper for visual feedback
@@ -103,6 +104,13 @@ export async function scanEvidence(
   const fileName = file.name
   
   try {
+    // Record evidence upload event
+    await recordSessionEvent('evidence_uploaded', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    })
+    
     // PHASE 1: INGESTED - Document received
     scannerStateMachine.transitionToIngested(fileName)
     await delay(800)
@@ -120,6 +128,12 @@ export async function scanEvidence(
     // PHASE 3: SCANNING - Analyze and seal
     scannerStateMachine.transitionToScanning(fileName, 'analyzing')
     await delay(1200)
+
+    // Record scan performed event
+    await recordSessionEvent('scan_performed', {
+      fileName: file.name,
+      fileType: file.type
+    })
 
     // Seal the evidence (always succeeds)
     const sealed = await sealDocument(content, fileName)
@@ -186,6 +200,12 @@ export async function scanEvidence(
     // PHASE 5: SEALED - Generate certificate
     scannerStateMachine.transitionToSealed(fileName, evidenceArtifact.id)
     await delay(1000)
+
+    // Record certificate generation event
+    await recordSessionEvent('certificate_generated', {
+      evidenceId: evidenceArtifact.id,
+      evidenceHash: sealed.seal.documentHash
+    })
 
     // Generate forensic certificate (always succeeds)
     const certificateContent = await generateForensicCertificate(
