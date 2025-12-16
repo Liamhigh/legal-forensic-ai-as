@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Scales, Trash } from '@phosphor-icons/react'
+import { Trash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UnifiedInput } from '@/components/UnifiedInput'
@@ -33,6 +33,7 @@ function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [currentCase, setCurrentCase] = useState(() => getCurrentCase())
+  const [logoError, setLogoError] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -354,8 +355,21 @@ Provide a thorough forensic analysis with specific legal considerations.`
       {/* Minimal Header */}
       <header className="border-b border-border bg-card px-4 py-3 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Scales size={24} weight="duotone" className="text-primary" />
+          <div className="flex items-center gap-3">
+            {!logoError ? (
+              <img 
+                src="/verum-omnis-logo.jpg" 
+                alt="Verum Omnis Logo"
+                className="h-10 w-10 object-contain rounded"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="h-10 flex items-center px-2 bg-primary/10 rounded">
+                <span className="text-xs font-semibold text-primary whitespace-nowrap">
+                  VERUM OMNIS — Forensic AI
+                </span>
+              </div>
+            )}
             <div>
               <h1 className="text-base font-semibold tracking-tight text-foreground">
                 Verum Omnis
@@ -392,7 +406,20 @@ Provide a thorough forensic analysis with specific legal considerations.`
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4"
               >
-                <Scales size={48} weight="duotone" className="text-primary mb-4" />
+                {!logoError ? (
+                  <img 
+                    src="/verum-omnis-logo.jpg" 
+                    alt="Verum Omnis Logo"
+                    className="h-16 w-16 object-contain mb-4 rounded"
+                    onError={() => setLogoError(true)}
+                  />
+                ) : (
+                  <div className="mb-4 px-4 py-2 bg-primary/10 rounded">
+                    <span className="text-sm font-semibold text-primary">
+                      VERUM OMNIS — Forensic AI
+                    </span>
+                  </div>
+                )}
                 <h2 className="text-xl font-semibold text-foreground mb-2">
                   Welcome to Verum Omnis
                 </h2>
