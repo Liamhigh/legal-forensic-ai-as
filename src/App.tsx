@@ -350,7 +350,14 @@ Provide a thorough forensic analysis with specific legal considerations.`
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background" style={{ maxWidth: '100vw', overflowX: 'hidden' }}>
+    <div className="flex flex-col bg-background" style={{ 
+      maxWidth: '100vw', 
+      overflowX: 'hidden',
+      minHeight: '100vh',
+      minHeight: '-webkit-fill-available',
+      height: '100vh',
+      height: '-webkit-fill-available'
+    }}>
       {/* Minimal Header */}
       <header className="border-b border-border bg-card px-4 py-3 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
