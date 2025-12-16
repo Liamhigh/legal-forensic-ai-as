@@ -354,8 +354,12 @@ Provide a thorough forensic analysis with specific legal considerations.`
       {/* Minimal Header */}
       <header className="border-b border-border bg-card px-4 py-3 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Scales size={24} weight="duotone" className="text-primary" />
+          <div className="flex items-center gap-3">
+            <img 
+              src="/assets/company-logo-2.jpg" 
+              alt="Verum Omnis Logo" 
+              className="h-8 w-8 object-contain rounded"
+            />
             <div>
               <h1 className="text-base font-semibold tracking-tight text-foreground">
                 Verum Omnis
@@ -392,7 +396,11 @@ Provide a thorough forensic analysis with specific legal considerations.`
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4"
               >
-                <Scales size={56} weight="duotone" className="text-primary mb-6" />
+                <img 
+                  src="/assets/company-logo-2.jpg" 
+                  alt="Verum Omnis Logo" 
+                  className="h-20 w-20 object-contain rounded-lg mb-6"
+                />
                 <h2 className="text-2xl font-semibold text-foreground mb-3">
                   Welcome to Verum Omnis
                 </h2>

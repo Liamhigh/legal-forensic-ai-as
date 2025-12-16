@@ -6,7 +6,7 @@
 import { useState, useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { PaperPlaneRight, X } from '@phosphor-icons/react'
+import { PaperPlaneRight, X, Paperclip } from '@phosphor-icons/react'
 import { AttachmentMenu } from '@/components/AttachmentMenu'
 
 interface UnifiedInputProps {
