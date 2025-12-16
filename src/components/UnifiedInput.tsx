@@ -6,15 +6,17 @@
 import { useState, useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { PaperPlaneRight, Paperclip, X } from '@phosphor-icons/react'
+import { PaperPlaneRight, X, Paperclip } from '@phosphor-icons/react'
+import { AttachmentMenu } from '@/components/AttachmentMenu'
 
 interface UnifiedInputProps {
   onSubmit: (message: string, files?: File[]) => void
   disabled?: boolean
   placeholder?: string
+  suggestedPrompts?: string[]
 }
 
-export function UnifiedInput({ onSubmit, disabled, placeholder }: UnifiedInputProps) {
+export function UnifiedInput({ onSubmit, disabled, placeholder, suggestedPrompts = [] }: UnifiedInputProps) {
   const [message, setMessage] = useState('')
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -52,6 +54,10 @@ export function UnifiedInput({ onSubmit, disabled, placeholder }: UnifiedInputPr
     }
   }
 
+  const handlePromptSelect = (prompt: string) => {
+    onSubmit(prompt)
+  }
+
   return (
     <div className="space-y-2">
       {/* File attachments preview */}
@@ -86,23 +92,20 @@ export function UnifiedInput({ onSubmit, disabled, placeholder }: UnifiedInputPr
           multiple
         />
         
-        <Button
-          onClick={() => fileInputRef.current?.click()}
+        <AttachmentMenu
+          onFileSelect={() => fileInputRef.current?.click()}
+          onPromptSelect={handlePromptSelect}
           disabled={disabled}
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-foreground flex-shrink-0"
-        >
-          <Paperclip size={20} weight="regular" />
-        </Button>
+          suggestedPrompts={suggestedPrompts}
+        />
 
         <Input
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyPress}
-          placeholder={isProcessingFiles ? "Processing files..." : (placeholder || "Add evidence or ask a question...")}
+          placeholder={isProcessingFiles ? "Processing files..." : (placeholder || "Message Verum Omnis...")}
           disabled={disabled}
-          className="flex-1 bg-background border-input focus-visible:ring-1 focus-visible:ring-ring rounded-xl text-base py-3 px-4"
+          className="flex-1 bg-background border-input focus-visible:ring-1 focus-visible:ring-ring rounded-2xl py-3 px-4"
           style={{ fontSize: '16px' }}
         />
 
@@ -110,9 +113,9 @@ export function UnifiedInput({ onSubmit, disabled, placeholder }: UnifiedInputPr
           onClick={handleSubmit}
           disabled={(!message.trim() && attachedFiles.length === 0) || disabled}
           size="icon"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 rounded-xl flex-shrink-0"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 rounded-full flex-shrink-0 h-10 w-10"
         >
-          <PaperPlaneRight size={20} weight="fill" />
+          <PaperPlaneRight size={18} weight="fill" />
         </Button>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Scales, Trash } from '@phosphor-icons/react'
+import { Trash, Lightbulb } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UnifiedInput } from '@/components/UnifiedInput'
@@ -354,8 +354,12 @@ Provide a thorough forensic analysis with specific legal considerations.`
       {/* Minimal Header */}
       <header className="border-b border-border bg-card px-4 py-3 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Scales size={24} weight="duotone" className="text-primary" />
+          <div className="flex items-center gap-3">
+            <img 
+              src="/assets/company-logo-2.jpg" 
+              alt="Verum Omnis Logo" 
+              className="h-8 w-8 object-contain rounded"
+            />
             <div>
               <h1 className="text-base font-semibold tracking-tight text-foreground">
                 Verum Omnis
@@ -392,28 +396,21 @@ Provide a thorough forensic analysis with specific legal considerations.`
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4"
               >
-                <Scales size={48} weight="duotone" className="text-primary mb-4" />
-                <h2 className="text-xl font-semibold text-foreground mb-2">
+                <img 
+                  src="/assets/company-logo-2.jpg" 
+                  alt="Verum Omnis Logo" 
+                  className="h-20 w-20 object-contain rounded-lg mb-6"
+                />
+                <h2 className="text-2xl font-semibold text-foreground mb-3">
                   Welcome to Verum Omnis
                 </h2>
-                <p className="text-base text-muted-foreground mb-6 max-w-2xl" style={{ 
-                  lineHeight: 'var(--line-height-base, 1.6)' 
-                }}>
+                <p className="text-lg text-muted-foreground mb-6 max-w-2xl leading-relaxed">
                   Your forensic thinking partner. Add evidence, ask questions, or request documents.
                   Everything is automatically sealed and added to your case.
                 </p>
-                <div className="flex flex-wrap gap-2 justify-center max-w-3xl">
-                  {SUGGESTED_PROMPTS.map((prompt, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      onClick={() => handlePromptClick(prompt)}
-                      disabled={isLoading}
-                      className="text-sm hover:bg-accent hover:text-accent-foreground transition-all rounded-xl"
-                    >
-                      {prompt}
-                    </Button>
-                  ))}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-full px-4 py-2">
+                  <Lightbulb size={16} weight="duotone" className="text-muted-foreground" aria-hidden="true" />
+                  <span>Click the <strong>+</strong> button below to see suggested actions</span>
                 </div>
               </motion.div>
             ) : (
@@ -462,7 +459,8 @@ Provide a thorough forensic analysis with specific legal considerations.`
           <UnifiedInput
             onSubmit={handleSubmit}
             disabled={isLoading}
-            placeholder="Add evidence or ask a question..."
+            placeholder="Message Verum Omnis..."
+            suggestedPrompts={SUGGESTED_PROMPTS}
           />
         </div>
       </div>

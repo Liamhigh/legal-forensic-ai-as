@@ -102,16 +102,18 @@
   
   /* ChatGPT-style typography */
   --font-size-base: 16px;
-  --font-size-chat: 18px;
-  --line-height-base: 1.6;
-  --max-width-chat: 680px;
+  --font-size-chat: 16px;
+  --line-height-base: 1.75;
+  --max-width-chat: 768px;
 }
 
 body {
   font-family: var(--font-sans);
-  line-height: 1.6;
+  line-height: 1.75;
   font-size: 16px;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html {

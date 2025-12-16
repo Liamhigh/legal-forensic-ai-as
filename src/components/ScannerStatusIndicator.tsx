@@ -53,13 +53,13 @@ const stateConfig = {
   [ScannerState.OUTPUT_READY]: {
     icon: CheckCircle,
     iconWeight: 'fill' as const,
-    color: 'text-green-600',
+    color: 'text-forensic-sealed',
     showProgress: false
   },
   [ScannerState.ERROR]: {
     icon: Warning,
     iconWeight: 'fill' as const,
-    color: 'text-red-600',
+    color: 'text-forensic-error',
     showProgress: false
   }
 }
@@ -90,11 +90,11 @@ export function ScannerStatusIndicator() {
       exit={{ opacity: 0 }}
       className="flex justify-center my-4"
     >
-      <div className={`border rounded-lg px-4 py-3 max-w-md w-full shadow-lg ${
+      <div className={`border rounded-lg px-4 py-3 max-w-md w-full shadow-sm ${
         progress.state === ScannerState.ERROR 
-          ? 'bg-red-50 border-red-300' 
+          ? 'bg-forensic-error-bg border-forensic-error-border' 
           : progress.state === ScannerState.OUTPUT_READY
-          ? 'bg-green-50 border-green-300'
+          ? 'bg-forensic-sealed-bg border-forensic-sealed-border'
           : 'bg-card border-primary/30'
       }`}>
         <div className="flex items-start gap-3">
@@ -138,11 +138,11 @@ export function ScannerStatusIndicator() {
             )}
 
             {!progress.aiAnalysisAvailable && progress.state === ScannerState.OUTPUT_READY && (
-              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                <p className="text-yellow-800 font-medium">
-                  ⚠️ AI analysis unavailable
+              <div className="mt-2 p-2 bg-forensic-condition-bg border border-forensic-condition-border rounded text-xs">
+                <p className="text-forensic-condition-text font-semibold uppercase tracking-wide">
+                  ⚠️ Condition Noted
                 </p>
-                <p className="text-yellow-700 mt-1">
+                <p className="text-forensic-condition-text mt-1">
                   Document sealed successfully with baseline forensic processing.
                   Certificate notes AI unavailability.
                 </p>
@@ -163,9 +163,9 @@ export function ScannerStatusIndicator() {
 
             {/* Error details */}
             {progress.error && (
-              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs">
-                <p className="text-red-800 font-medium">Error Details:</p>
-                <p className="text-red-700 mt-1">{progress.error}</p>
+              <div className="mt-2 p-2 bg-forensic-error-bg border border-forensic-error-border rounded text-xs">
+                <p className="text-forensic-error-text font-semibold uppercase tracking-wide">Error Details:</p>
+                <p className="text-forensic-error-text mt-1">{progress.error}</p>
               </div>
             )}
           </div>

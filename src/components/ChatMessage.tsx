@@ -96,7 +96,7 @@ export function ChatMessageComponent({ message }: ChatMessageProps) {
         <div className="bg-transparent border-none rounded-lg px-4 py-2 max-w-md">
           <div className="flex items-start gap-2">
             {message.evidenceSealed?.certificateGenerated ? (
-              <CheckCircle size={16} weight="fill" className="text-green-600 flex-shrink-0 mt-0.5" />
+              <CheckCircle size={16} weight="fill" className="text-forensic-sealed flex-shrink-0 mt-0.5" />
             ) : (
               <Lock size={16} weight="fill" className="text-primary flex-shrink-0 mt-0.5" />
             )}
@@ -113,9 +113,9 @@ export function ChatMessageComponent({ message }: ChatMessageProps) {
                     Hash: {message.evidenceSealed.hash.substring(0, 16)}...
                   </p>
                   {message.evidenceSealed.certificateGenerated && (
-                    <p className="flex items-center gap-1.5 text-green-600">
+                    <p className="flex items-center gap-1.5 text-forensic-sealed">
                       <CheckCircle size={12} weight="fill" />
-                      Forensic certificate generated
+                      Forensic certificate generated — Sealed
                     </p>
                   )}
                 </div>
