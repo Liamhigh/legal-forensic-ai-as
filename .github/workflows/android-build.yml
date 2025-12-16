@@ -49,7 +49,7 @@ jobs:
     - name: 'Gate 3: Unit & Component Tests'
       run: |
         echo "=== GATE 3: Unit & Component Tests ==="
-        npm test -- --run --reporter=verbose
+        npm test
         echo "✓ All tests passed"
 
     # ========================================
