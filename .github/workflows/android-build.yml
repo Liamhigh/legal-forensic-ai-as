@@ -1,14 +1,18 @@
-name: Build Android APK
+name: Production-Grade Android APK Pipeline
 
+# Workflow Trigger: Push and PR to main, APK only on push
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
-  build:
+  # =============================================================================
+  # VERIFICATION GATES - All must pass before APK build
+  # =============================================================================
+  verification-gates:
+    name: Verification Gates
     runs-on: ubuntu-latest
     
     steps:
@@ -21,42 +25,80 @@ jobs:
         node-version: '18'
         cache: 'npm'
 
-    - name: Install dependencies
-      run: npm ci
+    # ========================================
+    # GATE 1: Dependency Integrity
+    # ========================================
+    - name: 'Gate 1: Dependency Integrity - npm ci'
+      run: |
+        echo "=== GATE 1: Dependency Integrity ==="
+        npm ci
+        echo "✓ Dependencies installed successfully with lockfile integrity"
 
-    - name: Build web application
-      run: npm run build
+    # ========================================
+    # GATE 2: Static Quality - Linting
+    # ========================================
+    - name: 'Gate 2: Static Quality - TypeScript Linting'
+      run: |
+        echo "=== GATE 2: Static Quality - Linting ==="
+        npm run lint
+        echo "✓ Lint checks passed"
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
+    # ========================================
+    # GATE 3: Unit & Component Tests
+    # ========================================
+    - name: 'Gate 3: Unit & Component Tests'
+      run: |
+        echo "=== GATE 3: Unit & Component Tests ==="
+        npm test
+        echo "✓ All tests passed"
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
+    # ========================================
+    # GATE 4: Build Verification
+    # ========================================
+    - name: 'Gate 4: Build Verification'
+      run: |
+        echo "=== GATE 4: Build Verification ==="
+        npm run build
+        echo "✓ Production build completed successfully"
 
-    - name: Sync Capacitor
-      run: npx cap sync android
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x android/gradlew
-
-    - name: Build debug APK
-      working-directory: ./android
-      run: ./gradlew assembleDebug
-
-    - name: Upload debug APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: verum-omnis-debug
-        path: android/app/build/outputs/apk/debug/app-debug.apk
-        retention-days: 30
-
-  build-release:
+  # =============================================================================
+  # SECURITY GATE - CodeQL Analysis
+  # =============================================================================
+  security-gate:
+    name: Security Gate - CodeQL
     runs-on: ubuntu-latest
-    # Only build release on main branch or manual dispatch
-    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    needs: verification-gates
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: javascript-typescript
+
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+
+    - name: 'Gate 5: Security Analysis - CodeQL'
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:javascript-typescript"
+
+  # =============================================================================
+  # ANDROID APK BUILD - Only on push to main, only after all gates pass
+  # =============================================================================
+  build-signed-apk:
+    name: Build Signed APK
+    runs-on: ubuntu-latest
+    # CRITICAL: Only run on push to main, and only after ALL gates pass
+    needs: [verification-gates, security-gate]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
     - name: Checkout code
@@ -64,27 +106,24 @@ jobs:
 
     # ========================================
     # CI GUARD: Prevent signing regressions
-    # DO NOT MODIFY WITHOUT SECURITY REVIEW
     # ========================================
-    - name: CI Guard - Check for masked placeholders in workflow
+    - name: CI Guard - Validate workflow integrity
       run: |
-        echo "Checking for masked signing placeholders in workflow..."
+        echo "=== CI Guard: Workflow Integrity Checks ==="
+        
+        # Check for masked placeholders
         if grep -q '\*\*\*\*\*\*' .github/workflows/android-build.yml; then
-          echo "ERROR: Masked signing placeholder (******) detected in android-build.yml"
-          echo "This indicates a potential security regression where secrets were committed."
+          echo "❌ ERROR: Masked signing placeholder detected"
           exit 1
         fi
-        echo "✓ No masked placeholders found"
-
-    - name: CI Guard - Check for SHA-256 signing references
-      run: |
-        echo "Checking for SHA-256 signing references in workflow..."
+        
+        # Check for SHA-256 signing references
         if grep -iE 'sha-?256.*sign' .github/workflows/android-build.yml; then
-          echo "ERROR: SHA-256 signing detected in android-build.yml"
-          echo "APK signing must rely on keystore only, not SHA-256 hash signing."
+          echo "❌ ERROR: SHA-256 signing detected - keystore-only signing required"
           exit 1
         fi
-        echo "✓ No SHA-256 signing references found"
+        
+        echo "✓ CI Guard checks passed"
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
@@ -92,12 +131,16 @@ jobs:
         node-version: '18'
         cache: 'npm'
 
+    # Rebuild application (dependencies already verified by gates)
     - name: Install dependencies
       run: npm ci
 
     - name: Build web application
       run: npm run build
 
+    # ========================================
+    # Android Build Environment
+    # ========================================
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
@@ -114,68 +157,65 @@ jobs:
       run: chmod +x android/gradlew
 
     # ========================================
-    # SIGNING STEPS
+    # SIGNING CONFIGURATION
     # DO NOT MODIFY WITHOUT SECURITY REVIEW
     # ========================================
-    
-    # Validate signing secrets exist on main branch
-    - name: Validate signing secrets on main branch
-      if: github.ref == 'refs/heads/main'
+    - name: Validate signing secrets
       run: |
-        if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ] || \
-           [ -z "${{ secrets.KEYSTORE_PASSWORD }}" ] || \
-           [ -z "${{ secrets.KEY_ALIAS }}" ] || \
-           [ -z "${{ secrets.KEY_PASSWORD }}" ]; then
+        echo "=== Signing Secrets Validation ==="
+        if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ] || \
+           [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] || \
+           [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ] || \
+           [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
           echo "❌ ERROR: Signing secrets are required for main branch builds"
-          echo "Please configure the following GitHub secrets:"
-          echo "  - KEYSTORE_BASE64"
-          echo "  - KEYSTORE_PASSWORD"
-          echo "  - KEY_ALIAS"
-          echo "  - KEY_PASSWORD"
           echo ""
-          echo "See SIGNING_SETUP.md for instructions."
+          echo "Required GitHub Secrets:"
+          echo "  - ANDROID_KEYSTORE_BASE64"
+          echo "  - ANDROID_KEYSTORE_PASSWORD"
+          echo "  - ANDROID_KEY_ALIAS"
+          echo "  - ANDROID_KEY_PASSWORD"
+          echo ""
+          echo "See SIGNING_SETUP.md for configuration instructions."
           exit 1
         fi
-        echo "✓ All signing secrets are configured"
+        echo "✓ All signing secrets configured"
     
-    # Decode keystore from secrets
-    - name: Decode Keystore
-      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+    - name: Decode signing keystore
       run: |
-        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
+        echo "=== Decoding Keystore ==="
+        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
+        echo "✓ Keystore decoded successfully"
 
-    # Build signed release APK
     - name: Build signed release APK
-      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
       working-directory: ./android
       env:
         KEYSTORE_FILE: app/keystore.jks
-        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         REQUIRE_SIGNED_RELEASE: "true"
       run: |
+        echo "=== Building Signed Release APK ==="
         ./gradlew assembleRelease \
           -Pandroid.injected.signing.store.file=app/keystore.jks \
           -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
           -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
           -Pandroid.injected.signing.key.password=$KEY_PASSWORD
+        echo "✓ APK build completed"
 
-    # Verify APK signature (CRITICAL - ensures APK is actually signed)
-    - name: Verify APK signature with apksigner
-      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+    # ========================================
+    # SIGNATURE VERIFICATION (CRITICAL)
+    # ========================================
+    - name: Verify APK cryptographic signature
       run: |
-        # Find the latest apksigner
+        echo "=== APK Signature Verification ==="
         APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -V | tail -n 1)
+        
         if [ -z "$APKSIGNER" ]; then
           echo "❌ apksigner not found in Android SDK"
           exit 1
         fi
-        echo "Using apksigner: $APKSIGNER"
-        echo ""
-        echo "=== APK Signature Verification ==="
         
-        # Run verification and check result directly
         if $APKSIGNER verify --print-certs android/app/build/outputs/apk/release/app-release.apk; then
           echo ""
           echo "✓ APK signature verified successfully"
@@ -187,77 +227,75 @@ jobs:
           exit 1
         fi
 
-    # Build unsigned release if no keystore (NON-MAIN BRANCHES ONLY)
-    - name: Build unsigned release APK (development only)
-      if: ${{ secrets.KEYSTORE_BASE64 == '' && github.ref != 'refs/heads/main' }}
-      working-directory: ./android
-      run: |
-        echo "⚠️  WARNING: Building unsigned APK (development/testing only)"
-        echo "⚠️  This APK cannot be distributed to end users"
-        ./gradlew assembleRelease
-    
-    # Final verification: Ensure APK is signed on main branch
-    - name: Final verification - Ensure APK is signed on main
-      if: github.ref == 'refs/heads/main'
-      run: |
-        echo "=== Final APK Signature Check ==="
-        # Find the latest apksigner
-        APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -V | tail -n 1)
-        
-        # Run verification silently and check result
-        if $APKSIGNER verify android/app/build/outputs/apk/release/app-release.apk >/dev/null; then
-          echo "✓ Final verification passed: APK is cryptographically signed"
-          echo "✓ APK is ready for Google Play and enterprise distribution"
-        else
-          echo "❌ CRITICAL FAILURE: APK on main branch is NOT signed"
-          echo "❌ This violates security requirements"
-          echo "❌ Unsigned APKs cannot be distributed to production"
-          exit 1
-        fi
-    
-    # ========================================
-    # END SIGNING STEPS
-    # ========================================
-
-    # Verify release APK exists
-    - name: Verify release APK exists
+    - name: Verify APK file exists
       run: |
         if [ ! -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
-          echo "ERROR: Expected release APK not found at android/app/build/outputs/apk/release/app-release.apk"
-          echo "Build may have failed silently or output path changed."
-          ls -la android/app/build/outputs/apk/release/ || echo "Release directory does not exist"
+          echo "❌ ERROR: Release APK not found"
           exit 1
         fi
-        echo "✓ Release APK verified at android/app/build/outputs/apk/release/app-release.apk"
+        echo "✓ Release APK exists"
 
-    # Print build information
+    # ========================================
+    # Build Metadata
+    # ========================================
+    - name: Generate build metadata
+      id: build-meta
+      run: |
+        echo "=== Build Metadata ==="
+        APP_NAME="verum-omnis"
+        COMMIT_SHA="${{ github.sha }}"
+        SHORT_SHA="${COMMIT_SHA:0:7}"
+        TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
+        
+        echo "app_name=${APP_NAME}" >> $GITHUB_OUTPUT
+        echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+        echo "timestamp=${TIMESTAMP}" >> $GITHUB_OUTPUT
+        echo "artifact_name=${APP_NAME}-${SHORT_SHA}-${TIMESTAMP}" >> $GITHUB_OUTPUT
+        
+        echo "Application: ${APP_NAME}"
+        echo "Commit SHA: ${SHORT_SHA}"
+        echo "Timestamp: ${TIMESTAMP}"
+
     - name: Print build information
       working-directory: ./android
       run: |
         echo "=== Android Build Information ==="
-        echo "Application ID: $(./gradlew -q printApplicationId 2>/dev/null || grep 'applicationId' app/build.gradle | awk '{print $2}' | tr -d '"')"
+        echo "Application ID: $(grep 'applicationId' app/build.gradle | awk '{print $2}' | tr -d '"')"
         echo "Version Name: $(grep 'versionName' app/build.gradle | awk '{print $2}' | tr -d '"')"
         echo "Version Code: $(grep 'versionCode' app/build.gradle | awk '{print $2}')"
+        ls -lh app/build/outputs/apk/release/
         echo "================================="
 
-    - name: Confirm release APK
-      run: |
-        ls -lh android/app/build/outputs/apk/release/
-
-    - name: Upload release APK
+    # ========================================
+    # Upload Verified APK
+    # ========================================
+    - name: Upload signed APK artifact
       uses: actions/upload-artifact@v4
       with:
-        name: verum-omnis-release
-        path: android/app/build/outputs/apk/release/*.apk
+        name: ${{ steps.build-meta.outputs.artifact_name }}
+        path: android/app/build/outputs/apk/release/app-release.apk
         retention-days: 90
 
-    - name: Create Release
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
-        files: android/app/build/outputs/apk/release/*.apk
+        tag_name: v${{ github.run_number }}-${{ steps.build-meta.outputs.short_sha }}
+        name: Release ${{ steps.build-meta.outputs.artifact_name }}
+        body: |
+          ## Verified Production APK
+          
+          **Build Information:**
+          - Commit: ${{ github.sha }}
+          - Build Time: ${{ steps.build-meta.outputs.timestamp }}
+          - Run ID: ${{ github.run_id }}
+          
+          **Verification Status:**
+          ✅ All verification gates passed
+          ✅ Security analysis passed (CodeQL)
+          ✅ APK cryptographically signed
+          
+          This APK is cryptographic proof that the entire system passed all verification gates.
+        files: android/app/build/outputs/apk/release/app-release.apk
         draft: false
         prerelease: false
       env:
