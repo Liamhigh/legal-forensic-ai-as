@@ -23,7 +23,7 @@ export function ReportDisplay({
   evidenceHash,
   onAskQuestion 
 }: ReportDisplayProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(true)
   
   // Extract key sections from the certificate
   const sections = extractSections(certificateContent)
