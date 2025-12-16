@@ -392,28 +392,17 @@ Provide a thorough forensic analysis with specific legal considerations.`
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4"
               >
-                <Scales size={48} weight="duotone" className="text-primary mb-4" />
-                <h2 className="text-xl font-semibold text-foreground mb-2">
+                <Scales size={56} weight="duotone" className="text-primary mb-6" />
+                <h2 className="text-2xl font-semibold text-foreground mb-3">
                   Welcome to Verum Omnis
                 </h2>
-                <p className="text-base text-muted-foreground mb-6 max-w-2xl" style={{ 
-                  lineHeight: 'var(--line-height-base, 1.6)' 
-                }}>
+                <p className="text-lg text-muted-foreground mb-6 max-w-2xl leading-relaxed">
                   Your forensic thinking partner. Add evidence, ask questions, or request documents.
                   Everything is automatically sealed and added to your case.
                 </p>
-                <div className="flex flex-wrap gap-2 justify-center max-w-3xl">
-                  {SUGGESTED_PROMPTS.map((prompt, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      onClick={() => handlePromptClick(prompt)}
-                      disabled={isLoading}
-                      className="text-sm hover:bg-accent hover:text-accent-foreground transition-all rounded-xl"
-                    >
-                      {prompt}
-                    </Button>
-                  ))}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-full px-4 py-2">
+                  <span>💡</span>
+                  <span>Click the <strong>+</strong> button below to see suggested actions</span>
                 </div>
               </motion.div>
             ) : (
@@ -462,7 +451,8 @@ Provide a thorough forensic analysis with specific legal considerations.`
           <UnifiedInput
             onSubmit={handleSubmit}
             disabled={isLoading}
-            placeholder="Add evidence or ask a question..."
+            placeholder="Message Verum Omnis..."
+            suggestedPrompts={SUGGESTED_PROMPTS}
           />
         </div>
       </div>
