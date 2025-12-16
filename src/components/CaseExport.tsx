@@ -84,7 +84,7 @@ export function CaseExport() {
       narrative += `This case narrative preserves the complete forensic record.\n`
       narrative += `All evidence artifacts and certificates remain cryptographically bound.\n`
 
-      // Generate PDF
+      // Generate PDF - optimized for size
       const reportData: PDFReportData = {
         title: `Case ${currentCase.caseId} - Full Sealed Narrative`,
         content: narrative,
@@ -95,8 +95,8 @@ export function CaseExport() {
       }
 
       const pdfBytes = await generatePDFReport(reportData, {
-        includeWatermark: true,
-        watermarkOpacity: 0.07
+        includeWatermark: false, // Disabled for smaller file size
+        watermarkOpacity: 0.05 // Even lighter if enabled
       })
 
       downloadPDF(pdfBytes, `${currentCase.caseId}_sealed_narrative.pdf`)

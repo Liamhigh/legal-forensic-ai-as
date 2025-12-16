@@ -354,9 +354,7 @@ Provide a thorough forensic analysis with specific legal considerations.`
       maxWidth: '100vw', 
       overflowX: 'hidden',
       minHeight: '100vh',
-      minHeight: '-webkit-fill-available',
-      height: '100vh',
-      height: '-webkit-fill-available'
+      height: '100vh'
     }}>
       {/* Minimal Header */}
       <header className="border-b border-border bg-card px-4 py-3 flex-shrink-0">
