@@ -172,10 +172,10 @@ class ScannerStateMachine {
       evidenceId: result.evidenceId,
       certificateId: result.certificateId,
       progress: 100,
-      message: result.message,
+      message: 'Document scanned and sealed',
       subMessage: result.aiAnalysisIncluded 
-        ? 'Complete with AI analysis' 
-        : 'Complete - AI analysis was unavailable',
+        ? 'Analysis mode: Enhanced (AI included)' 
+        : 'Analysis mode: Baseline (AI unavailable)',
       aiAnalysisAvailable: result.aiAnalysisIncluded
     })
   }
