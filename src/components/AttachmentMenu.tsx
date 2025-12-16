@@ -46,7 +46,7 @@ export function AttachmentMenu({
           size="icon"
           className="text-muted-foreground hover:text-foreground flex-shrink-0"
         >
-          <Plus size={24} weight="regular" />
+          <Plus size={20} weight="regular" />
         </Button>
       </PopoverTrigger>
       <PopoverContent 

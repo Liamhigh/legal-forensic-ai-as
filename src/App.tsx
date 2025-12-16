@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Scales, Trash } from '@phosphor-icons/react'
+import { Scales, Trash, Lightbulb } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UnifiedInput } from '@/components/UnifiedInput'
@@ -401,7 +401,7 @@ Provide a thorough forensic analysis with specific legal considerations.`
                   Everything is automatically sealed and added to your case.
                 </p>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-full px-4 py-2">
-                  <span>💡</span>
+                  <Lightbulb size={16} weight="duotone" className="text-muted-foreground" aria-hidden="true" />
                   <span>Click the <strong>+</strong> button below to see suggested actions</span>
                 </div>
               </motion.div>
