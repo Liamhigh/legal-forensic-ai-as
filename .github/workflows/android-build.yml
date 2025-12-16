@@ -46,11 +46,15 @@ jobs:
       working-directory: ./android
       run: ./gradlew assembleDebug
 
+    - name: Rename debug APK
+      run: |
+        mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/verum-omnis-debug.apk
+
     - name: Upload debug APK
       uses: actions/upload-artifact@v4
       with:
         name: verum-omnis-debug
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+        path: android/app/build/outputs/apk/debug/verum-omnis-debug.apk
         retention-days: 30
 
   build-release:
@@ -244,20 +248,55 @@ jobs:
       run: |
         ls -lh android/app/build/outputs/apk/release/
 
+    - name: Rename release APK
+      run: |
+        mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/verum-omnis-release.apk
+
+    # ========================================
+    # RELEASE READINESS GUARD
+    # Ensures only signed APKs are published as GitHub Releases
+    # ========================================
+    - name: Verify APK is signed before release
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: |
+        echo "=== Release Readiness Check ==="
+        echo "Verifying APK signature before creating GitHub Release..."
+        
+        # Find the latest apksigner
+        APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -V | tail -n 1)
+        if [ -z "$APKSIGNER" ]; then
+          echo "❌ apksigner not found in Android SDK"
+          exit 1
+        fi
+        
+        # Verify the APK is signed (capture output for better error reporting)
+        if ! $APKSIGNER verify android/app/build/outputs/apk/release/verum-omnis-release.apk; then
+          echo "❌ CRITICAL: APK is NOT signed!"
+          echo "❌ Refusing to create GitHub Release with unsigned APK"
+          echo "❌ This protects against publishing unverified releases"
+          exit 1
+        fi
+        
+        echo "✓ APK signature verified successfully"
+        echo "✓ Safe to create GitHub Release"
+        echo "================================="
+
     - name: Upload release APK
       uses: actions/upload-artifact@v4
       with:
         name: verum-omnis-release
-        path: android/app/build/outputs/apk/release/*.apk
+        path: android/app/build/outputs/apk/release/verum-omnis-release.apk
         retention-days: 90
 
     - name: Create Release
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      # SECURITY: Only create releases from main branch on push events
+      # AND only if keystore secrets are available (ensures signed APK)
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push' && secrets.KEYSTORE_BASE64
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ github.run_number }}
         name: Release v${{ github.run_number }}
-        files: android/app/build/outputs/apk/release/*.apk
+        files: android/app/build/outputs/apk/release/verum-omnis-release.apk
         draft: false
         prerelease: false
       env:
