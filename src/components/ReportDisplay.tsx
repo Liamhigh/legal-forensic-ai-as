@@ -144,7 +144,12 @@ function extractSections(content: string): {
   timeline?: string
   recommendations?: string
 } {
-  const sections: any = {}
+  const sections: {
+    summary?: string
+    contradictions?: string
+    timeline?: string
+    recommendations?: string
+  } = {}
   
   // Try to extract the synthesis narrative as summary
   const synthesisMatch = content.match(/SYNTHESIS NARRATIVE:?\s*\n([\s\S]*?)(?:\n\n|═══)/i)

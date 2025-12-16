@@ -19,7 +19,7 @@ import {
   addConversationEntry,
   clearCase
 } from '@/services/caseManagement'
-import { recordSessionEvent, getCurrentSealedSession, sealSession } from '@/services/sessionSealing'
+import { recordSessionEvent, sealSession } from '@/services/sessionSealing'
 import { detectAccusation, generateConsistencyReport, formatConsistencyReport } from '@/services/temporalCorrelation'
 import { 
   isEmailDraftRequest, 
@@ -73,9 +73,22 @@ function App() {
     
     // Set up cleanup on unmount - seal session when app closes
     return () => {
-      handleSessionClose()
+      // Use an async IIFE to handle the async cleanup
+      void (async () => {
+        try {
+          await sealSession()
+          await recordSessionEvent('session_end', {
+            messageCount: messages.length,
+            evidenceCount: getCurrentCase().evidence.length
+          })
+          console.log('Session sealed on app close')
+        } catch (error) {
+          console.error('Failed to seal session:', error)
+        }
+      })()
     }
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run on mount/unmount
 
   const handleSubmit = async (message: string, files?: File[]) => {
     if ((!message && !files) || isLoading) return
@@ -321,10 +334,10 @@ Provide a thorough forensic analysis with specific legal considerations.`
     }
   }
 
-  const handleForensicOutput = async (content: string, originalRequest: string) => {
+  const handleForensicOutput = async (content: string, _originalRequest: string) => {
     try {
       // This is a drafted document - seal it
-      const sealed = await sealDocument(content, `draft_${Date.now()}.txt`)
+      await sealDocument(content, `draft_${Date.now()}.txt`)
 
       // Add sealed document to case as conversation entry
       addConversationEntry('assistant', content, true)
@@ -369,10 +382,10 @@ Provide a thorough forensic analysis with specific legal considerations.`
     }
   }
 
-  const handleEmailDraft = async (content: string, originalRequest: string) => {
+  const handleEmailDraft = async (content: string, _originalRequest: string) => {
     try {
       // Extract email components
-      const components = extractEmailComponents(originalRequest, content)
+      const components = extractEmailComponents(_originalRequest, content)
       
       // Create drafted email
       const draftedEmail = createDraftedEmail(
@@ -433,23 +446,6 @@ Provide a thorough forensic analysis with specific legal considerations.`
       addConversationEntry('assistant', content, false)
 
       toast.error('Email drafted but sealing failed')
-    }
-  }
-
-  const handleSessionClose = async () => {
-    try {
-      // Seal the current session
-      await sealSession()
-      
-      // Record session end event
-      await recordSessionEvent('session_end', {
-        messageCount: messages.length,
-        evidenceCount: currentCase.evidence.length
-      })
-      
-      console.log('Session sealed on app close')
-    } catch (error) {
-      console.error('Failed to seal session:', error)
     }
   }
 
