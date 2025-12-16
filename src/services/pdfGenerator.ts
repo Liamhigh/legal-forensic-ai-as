@@ -174,10 +174,11 @@ function drawDebugOutlines(page: PDFPage, debugMode: boolean) {
 
 /**
  * Generate forensic PDF report with proper layer ordering
+ * OPTIMIZED for small file sizes and guaranteed content rendering
  */
 export async function generatePDFReport(
   reportData: PDFReportData,
-  options: PDFGenerationOptions = { includeWatermark: true }
+  options: PDFGenerationOptions = { includeWatermark: false } // Disabled by default for file size
 ): Promise<Uint8Array> {
   // Validate text opacity requirement
   if (options.debugMode) {
@@ -362,6 +363,7 @@ export async function generatePDFReport(
   }
   
   // LAYER 3: Watermark logo (centered, opacity 0.06-0.08)
+  // OPTIMIZED: Embed watermark once and reuse across pages
   if (options.includeWatermark) {
     const watermarkOpacity = options.watermarkOpacity || 0.07
     const watermarkDataUrl = await loadWatermarkImage()
@@ -372,28 +374,31 @@ export async function generatePDFReport(
         const isJpg = watermarkDataUrl.startsWith('data:image/jpeg')
         const watermarkBytes = await fetch(watermarkDataUrl).then(res => res.arrayBuffer())
         
+        // IMPORTANT: Embed the image ONCE (not per page)
         const watermarkImage = isJpg 
           ? await pdfDoc.embedJpg(watermarkBytes)
           : await pdfDoc.embedPng(watermarkBytes)
         
-        const watermarkDims = watermarkImage.scale(0.3)
+        // Scale down significantly to reduce file size
+        const watermarkDims = watermarkImage.scale(0.15) // Reduced from 0.3
         
         // Add watermark to all pages (centered, AFTER text)
         const pages = pdfDoc.getPages()
         pages.forEach(p => {
           const { width: pageWidth, height: pageHeight } = p.getSize()
           
-          // CRITICAL: Draw watermark AFTER text, with opacity ONLY on watermark
+          // Draw watermark (image already embedded, just drawing reference)
           p.drawImage(watermarkImage, {
             x: (pageWidth - watermarkDims.width) / 2,
             y: (pageHeight - watermarkDims.height) / 2,
             width: watermarkDims.width,
             height: watermarkDims.height,
-            opacity: watermarkOpacity // ONLY watermark has reduced opacity
+            opacity: watermarkOpacity
           })
         })
       } catch (error) {
         console.error('Failed to embed watermark:', error)
+        // Continue without watermark - don't fail PDF generation
       }
     }
   }

@@ -100,7 +100,7 @@ export function ChatMessageComponent({ message }: ChatMessageProps) {
             ) : (
               <Lock size={16} weight="fill" className="text-primary flex-shrink-0 mt-0.5" />
             )}
-            <div className="flex-1 text-sm">
+            <div className="flex-1 text-sm" style={{ fontSize: '0.95rem', lineHeight: '1.5' }}>
               <p className="text-muted-foreground font-medium">{message.content}</p>
               {message.evidenceSealed && (
                 <div className="text-xs text-muted-foreground/70 space-y-0.5 mt-2">
@@ -145,7 +145,9 @@ export function ChatMessageComponent({ message }: ChatMessageProps) {
         )}
         <p className="whitespace-pre-wrap" style={{ 
           fontSize: 'var(--font-size-chat, 18px)', 
-          lineHeight: 'var(--line-height-base, 1.6)' 
+          lineHeight: 'var(--line-height-base, 1.75)',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word'
         }}>
           {message.content}
         </p>
