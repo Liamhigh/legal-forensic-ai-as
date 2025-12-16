@@ -65,8 +65,6 @@ export interface ConsistencyReport {
  * Detect accusations or timeline disputes in text
  */
 export function detectAccusation(text: string): AccusationDetection {
-  // lowerText is available for future pattern matching enhancements
-  
   // Patterns indicating accusations
   const accusationPatterns = [
     /accused of/i,
@@ -237,7 +235,6 @@ export async function generateConsistencyReport(
   }
   
   const session = getCurrentSealedSession()
-  // caseData is available for future enhancements
   
   // Use extracted time window or default to last 24 hours
   const timeWindow = accusationDetection.extractedTimeWindow || {

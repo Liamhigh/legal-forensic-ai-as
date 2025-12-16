@@ -458,8 +458,6 @@ Provide a thorough forensic analysis with specific legal considerations.`
     }
   }
 
-  // Removed unused function handlePromptClick
-
   return (
     <div className="flex flex-col bg-background w-full" style={{ 
       maxWidth: '100vw', 

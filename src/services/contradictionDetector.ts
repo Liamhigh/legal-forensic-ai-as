@@ -76,7 +76,6 @@ function detectTimelineContradictions(content: string): Contradiction[] {
   
   // Extract time references
   const timePattern = /(\d{1,2}):(\d{2})\s*(am|pm|AM|PM)?/g
-  // datePattern is available if needed for future enhancements
   
   const timeReferences: Array<{ time: string; line: number; context: string }> = []
   
