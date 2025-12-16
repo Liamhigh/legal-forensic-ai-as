@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Scales, Trash, Lightbulb } from '@phosphor-icons/react'
+import { Trash, Lightbulb } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UnifiedInput } from '@/components/UnifiedInput'
