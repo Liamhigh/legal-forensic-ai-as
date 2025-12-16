@@ -2,11 +2,28 @@
  * Session Sealing Service
  * Treats sessions as first-class evidentiary objects with cryptographic sealing
  * Sessions establish temporal presence and create custody chains
+ * 
+ * 🔒 CRITICAL ARCHITECTURAL RULE:
+ * All analytical outputs must be session-scoped artifacts cryptographically 
+ * chained to a sealed session timeline. No standalone analytical artifacts 
+ * are permitted.
+ * 
+ * This means:
+ * - Consistency reports must be session events
+ * - Certificates must be session children
+ * - Baseline analyses must be session-scoped
+ * - AI-enhanced analyses must be session-scoped
+ * 
+ * This prevents:
+ * - "Floating conclusions" with no chain of custody
+ * - Post-hoc fabrication claims
+ * - Loss of temporal context
+ * - Ambiguity in evidentiary value
  */
 
 export interface SessionEvent {
   eventId: string
-  eventType: 'session_start' | 'session_end' | 'evidence_uploaded' | 'scan_performed' | 'certificate_generated' | 'user_interaction' | 'statement_entered'
+  eventType: 'session_start' | 'session_end' | 'evidence_uploaded' | 'scan_performed' | 'certificate_generated' | 'user_interaction' | 'statement_entered' | 'consistency_report_generated' | 'analysis_generated'
   timestamp: number
   eventHash: string
   priorEventHash?: string

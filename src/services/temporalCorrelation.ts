@@ -3,9 +3,14 @@
  * Passive temporal-spatial correlation and contradiction detection
  * Triggered contextually when accusations or timeline disputes detected
  * Never claims innocence - only reports factual consistency or inconsistency
+ * 
+ * 🔒 ARCHITECTURAL RULE ENFORCEMENT:
+ * All consistency reports MUST be session-scoped artifacts.
+ * Every report generated is automatically recorded as a session event
+ * and cryptographically chained into the session timeline.
  */
 
-import { getCurrentSealedSession, wasSessionActiveDuring, getEventsInWindow, type SealedSession, type TemporalWindow } from './sessionSealing'
+import { getCurrentSealedSession, recordSessionEvent, wasSessionActiveDuring, getEventsInWindow, type SealedSession, type TemporalWindow } from './sessionSealing'
 import { getCurrentCase, type EvidenceArtifact } from './caseManagement'
 
 export interface AccusationDetection {
@@ -40,6 +45,8 @@ export interface SpatialCorrelation {
 export interface ConsistencyReport {
   generated: number
   reportId: string
+  sessionId: string // 🔒 CRITICAL: Links report to sealed session
+  sessionEventId: string // 🔒 CRITICAL: References the event that created this report
   accusationDetected: AccusationDetection
   temporalCorrelations: TemporalCorrelation[]
   spatialCorrelations: SpatialCorrelation[]
@@ -217,6 +224,8 @@ export function correlateEvidenceArtifacts(timeWindow: TemporalWindow): Array<{
 /**
  * Generate consistency report
  * This is the main function - triggered when accusations detected
+ * 
+ * 🔒 ENFORCEMENT: Automatically records report generation as session event
  */
 export async function generateConsistencyReport(
   accusationText: string
@@ -258,8 +267,21 @@ export async function generateConsistencyReport(
     relevantEvidence
   )
   
+  // Generate report ID
+  const reportId = `CR-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+  
+  // 🔒 CRITICAL: Record report generation as session event BEFORE creating report
+  // This ensures the report is cryptographically chained into the session
+  const sessionEvent = await recordSessionEvent('consistency_report_generated', {
+    reportId,
+    accusationType: accusationDetection.type,
+    timeWindow: timeWindow.description
+  })
+  
   // Generate report hash
   const reportData = JSON.stringify({
+    sessionId: session.sessionId,
+    sessionEventId: sessionEvent.eventId,
     accusationDetection,
     temporalCorrelation,
     spatialCorrelation,
@@ -276,7 +298,9 @@ export async function generateConsistencyReport(
   
   const report: ConsistencyReport = {
     generated: Date.now(),
-    reportId: `CR-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
+    reportId,
+    sessionId: session.sessionId, // 🔒 Links to session
+    sessionEventId: sessionEvent.eventId, // 🔒 Links to creation event
     accusationDetected: accusationDetection,
     temporalCorrelations: [temporalCorrelation],
     spatialCorrelations: [spatialCorrelation],
@@ -379,6 +403,11 @@ REPORT ID: ${report.reportId}
 GENERATED: ${new Date(report.generated).toISOString()}
 REPORT HASH: ${report.reportHash}
 
+SESSION LINKAGE (Chain of Custody):
+Session ID: ${report.sessionId}
+Session Event: ${report.sessionEventId}
+This report is cryptographically chained into session ${report.sessionId.substring(0, 16)}...
+
 ───────────────────────────────────────────────────────────────────
 ACCUSATION DETECTION
 ───────────────────────────────────────────────────────────────────
@@ -400,7 +429,9 @@ Sealed By: Verum Omnis Forensics
 Timestamp: ${new Date(report.generated).toISOString()}
 Version: 1.0.0
 
-This consistency report is based solely on sealed forensic records
+This consistency report is a session-scoped artifact cryptographically
+chained into sealed session ${report.sessionId.substring(0, 16)}... at event
+${report.sessionEventId}. It is based solely on sealed forensic records
 and cryptographically verified temporal data. It makes no claims
 regarding innocence, guilt, or truthfulness. All correlations are
 factual observations of temporal-spatial relationships.
