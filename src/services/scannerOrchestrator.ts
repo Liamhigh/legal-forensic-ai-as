@@ -22,9 +22,25 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 /**
  * Check if AI is available for enhanced analysis
+ * Tests if Spark LLM is actually functional, not just present
  */
 function isAIAvailable(): boolean {
-  return !!(window as any).spark?.llm
+  try {
+    const spark = (window as any).spark
+    // Check if spark and llm exist
+    if (!spark || !spark.llm) {
+      return false
+    }
+    
+    // Additional check: in development without Spark backend,
+    // the API will fail even if the object exists
+    // We can detect this by checking if we're in a Spark environment
+    const isSparkEnvironment = !!(spark.context || spark.agent || process.env.SPARK_AGENT_URL)
+    
+    return isSparkEnvironment
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -110,17 +126,21 @@ export async function scanEvidence(
     const aiAvailable = isAIAvailable()
     
     // Generate analysis - baseline if AI unavailable, enhanced if available
-    let nineBrainAnalysis: string
+    let nineBrainAnalysis: string | typeof import('./forensicCertificate').NineBrainAnalysis
+    let analysisType: 'baseline' | 'ai' = 'baseline'
     
     if (aiAvailable) {
       try {
-        // Try AI-enhanced analysis
+        // Try AI-enhanced analysis - would use actual AI here
+        // For now, generateNineBrainAnalysis returns mock structured data
+        // In production with AI, this would call the AI service
         nineBrainAnalysis = await generateNineBrainAnalysis(
           fileName,
           content,
           file.type,
           sealed.seal.documentHash
         )
+        analysisType = 'ai'
       } catch (error) {
         console.warn('AI analysis failed, using baseline:', error)
         // Fallback to baseline
@@ -130,19 +150,22 @@ export async function scanEvidence(
           file.type,
           sealed.seal.documentHash
         )
+        analysisType = 'baseline'
       }
     } else {
       // Use baseline analysis
+      console.log('AI not available - using baseline forensic analysis')
       nineBrainAnalysis = generateBaselineAnalysis(
         fileName,
         content,
         file.type,
         sealed.seal.documentHash
       )
+      analysisType = 'baseline'
     }
 
     // PHASE 4: ANALYZED
-    scannerStateMachine.transitionToAnalyzed(fileName, aiAvailable)
+    scannerStateMachine.transitionToAnalyzed(fileName, analysisType === 'ai')
     await delay(800)
 
     // Create evidence artifact
@@ -211,7 +234,7 @@ export async function scanEvidence(
       bundleHash: certificateArtifact.bundleHash,
       documentContent: sealed.originalContent,
       certificateContent: certificateContent,
-      aiAnalysisIncluded: aiAvailable,
+      aiAnalysisIncluded: analysisType === 'ai',
       message: '✅ Document scanned and sealed'
     }
 
