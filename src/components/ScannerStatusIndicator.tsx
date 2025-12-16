@@ -124,12 +124,6 @@ export function ScannerStatusIndicator() {
               </p>
             </div>
             
-            {progress.subMessage && (
-              <p className="text-xs text-muted-foreground mb-2">
-                {progress.subMessage}
-              </p>
-            )}
-            
             {progress.fileName && (
               <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mb-2">
                 <FileText size={12} weight="regular" />
@@ -137,16 +131,10 @@ export function ScannerStatusIndicator() {
               </p>
             )}
 
-            {!progress.aiAnalysisAvailable && progress.state === ScannerState.OUTPUT_READY && (
-              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                <p className="text-yellow-800 font-medium">
-                  ⚠️ AI analysis unavailable
-                </p>
-                <p className="text-yellow-700 mt-1">
-                  Document sealed successfully with baseline forensic processing.
-                  Certificate notes AI unavailability.
-                </p>
-              </div>
+            {progress.subMessage && (
+              <p className="text-xs text-muted-foreground mb-2">
+                {progress.subMessage}
+              </p>
             )}
             
             {/* Progress bar for active states */}

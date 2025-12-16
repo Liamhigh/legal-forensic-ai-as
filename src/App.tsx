@@ -253,9 +253,7 @@ Provide a thorough forensic analysis with specific legal considerations.`
       const sealedMessage: ChatMessage = {
         id: `sealed-${Date.now()}`,
         role: 'system',
-        content: result.aiAnalysisIncluded 
-          ? '✅ Document scanned and sealed\n🔒 Certificate generated and bound\n🤖 AI analysis included\n📁 Added to current case'
-          : '✅ Document scanned and sealed\n🔒 Certificate generated and bound\n⚠️ AI analysis unavailable - baseline scan completed\n📁 Added to current case',
+        content: '✅ Certificate generated and bound\n📁 Added to current case',
         timestamp: Date.now(),
         sealedArtifacts: {
           fileName: file.name,
