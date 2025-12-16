@@ -11,7 +11,7 @@
  */
 
 import { getCurrentSealedSession, recordSessionEvent, wasSessionActiveDuring, getEventsInWindow, type SealedSession, type TemporalWindow } from './sessionSealing'
-import { getCurrentCase, type EvidenceArtifact } from './caseManagement'
+import { getCurrentCase } from './caseManagement'
 
 export interface AccusationDetection {
   detected: boolean
@@ -65,7 +65,7 @@ export interface ConsistencyReport {
  * Detect accusations or timeline disputes in text
  */
 export function detectAccusation(text: string): AccusationDetection {
-  const lowerText = text.toLowerCase()
+  // lowerText is available for future pattern matching enhancements
   
   // Patterns indicating accusations
   const accusationPatterns = [
@@ -237,7 +237,7 @@ export async function generateConsistencyReport(
   }
   
   const session = getCurrentSealedSession()
-  const caseData = getCurrentCase()
+  // caseData is available for future enhancements
   
   // Use extracted time window or default to last 24 hours
   const timeWindow = accusationDetection.extractedTimeWindow || {

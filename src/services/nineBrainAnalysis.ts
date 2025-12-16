@@ -574,7 +574,7 @@ function generateSynthesisNarrative(
   communication: CommunicationBrainAnalysis,
   citizen: CitizenEngageAnalysis,
   behavioral: BehavioralDiagnosticsAnalysis,
-  rd: RDBrainAnalysis
+  _rd: RDBrainAnalysis
 ): string {
   let narrative = `Nine-Brain Analysis of "${fileName}":\n\n`
   
