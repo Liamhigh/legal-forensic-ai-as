@@ -6,6 +6,7 @@
 import { CheckCircle, Lock, FileText } from '@phosphor-icons/react'
 import { DocumentScannerIndicator } from '@/components/DocumentScannerIndicator'
 import { SealedArtifacts } from '@/components/SealedArtifacts'
+import { ReportDisplay } from '@/components/ReportDisplay'
 
 export interface ChatMessage {
   id: string
@@ -31,6 +32,7 @@ export interface ChatMessage {
     fileName: string
     phase: 'received' | 'verifying' | 'analyzing' | 'generating-cert' | 'sealing'
   }
+  onAskQuestion?: (question: string) => void
 }
 
 interface ChatMessageProps {
@@ -77,15 +79,27 @@ export function ChatMessageComponent({ message }: ChatMessageProps) {
     }
 
     return (
-      <SealedArtifacts
-        fileName={message.sealedArtifacts.fileName}
-        evidenceHash={message.sealedArtifacts.evidenceHash}
-        certificateId={message.sealedArtifacts.certificateId}
-        certificateHash={message.sealedArtifacts.certificateHash}
-        bundleHash={message.sealedArtifacts.bundleHash}
-        onDownloadDocument={message.sealedArtifacts.documentContent ? downloadDocument : undefined}
-        onDownloadCertificate={message.sealedArtifacts.certificateContent ? downloadCertificate : undefined}
-      />
+      <div className="space-y-3">
+        <SealedArtifacts
+          fileName={message.sealedArtifacts.fileName}
+          evidenceHash={message.sealedArtifacts.evidenceHash}
+          certificateId={message.sealedArtifacts.certificateId}
+          certificateHash={message.sealedArtifacts.certificateHash}
+          bundleHash={message.sealedArtifacts.bundleHash}
+          onDownloadDocument={message.sealedArtifacts.documentContent ? downloadDocument : undefined}
+          onDownloadCertificate={message.sealedArtifacts.certificateContent ? downloadCertificate : undefined}
+        />
+        
+        {/* Display the certificate report for user to ask questions */}
+        {message.sealedArtifacts.certificateContent && (
+          <ReportDisplay
+            certificateContent={message.sealedArtifacts.certificateContent}
+            fileName={message.sealedArtifacts.fileName}
+            evidenceHash={message.sealedArtifacts.evidenceHash}
+            onAskQuestion={message.onAskQuestion}
+          />
+        )}
+      </div>
     )
   }
 

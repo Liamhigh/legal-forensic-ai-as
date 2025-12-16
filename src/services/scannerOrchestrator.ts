@@ -14,8 +14,10 @@ import {
   type EvidenceArtifact,
   type ForensicCertificate 
 } from './caseManagement'
-import { recordSessionEvent } from './sessionSealing'
+import { recordSessionEvent, getCurrentSealedSession } from './sessionSealing'
 import { analyzeDocumentOffline, type ForensicDocument } from './offlineForensics'
+import { generateQRCode, addQRCodeToPDF, type QRCodeData } from './qrCodeSealing'
+import { storeEvidenceInVault } from './evidenceVault'
 
 /**
  * Delay helper for visual feedback
@@ -226,6 +228,48 @@ export async function scanEvidence(
 
     // Seal the evidence (always succeeds)
     const sealed = await sealDocument(content, fileName)
+    
+    // Handle PDF files specially - add QR code sealing
+    let sealedPdfBytes: Uint8Array | undefined
+    const isPDF = file.type === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')
+    
+    if (isPDF && content instanceof ArrayBuffer) {
+      try {
+        // Generate QR code for the PDF
+        const qrData: QRCodeData = {
+          documentHash: sealed.seal.documentHash,
+          timestamp: sealed.seal.timestamp,
+          type: 'evidence',
+          verificationUrl: `verum-omnis://verify/${sealed.seal.documentHash}`
+        }
+        
+        // Add QR code to PDF
+        const pdfBytes = new Uint8Array(content)
+        sealedPdfBytes = await addQRCodeToPDF(pdfBytes, qrData, 'bottom-right')
+        
+        // Store sealed PDF in evidence vault
+        const session = getCurrentSealedSession()
+        const qrCodeDataUrl = await generateQRCode(qrData)
+        await storeEvidenceInVault(
+          session.sessionId,
+          'sealed_pdf',
+          `sealed_${fileName}`,
+          sealedPdfBytes,
+          sealed.seal.documentHash,
+          qrCodeDataUrl,
+          {
+            originalFileName: fileName,
+            jurisdiction: sealed.seal.jurisdiction,
+            sealTimestamp: sealed.seal.timestamp
+          }
+        )
+        
+        console.log('PDF sealed with QR code and stored in evidence vault')
+      } catch (error) {
+        console.error('Failed to add QR code to PDF:', error)
+        // Continue without QR code - don't fail the entire scan
+      }
+    }
     
     // Check AI availability
     const aiAvailable = isAIAvailable()
