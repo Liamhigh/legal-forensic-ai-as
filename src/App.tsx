@@ -218,8 +218,8 @@ User query: ${message}
 Provide a thorough forensic analysis with specific legal considerations.`
       }
 
-      const prompt = (window as any).spark.llmPrompt`${systemPrompt}`
-      const response = await (window as any).spark.llm(prompt, 'gpt-4o')
+      const prompt = (window as unknown as { spark: { llmPrompt: (strings: TemplateStringsArray, ...values: unknown[]) => unknown } }).spark.llmPrompt`${systemPrompt}`
+      const response = await (window as unknown as { spark: { llm: (prompt: unknown, model: string) => Promise<string> } }).spark.llm(prompt, 'gpt-4o')
 
       // For email drafts, seal as email
       if (isEmailRequest) {
@@ -456,10 +456,6 @@ Provide a thorough forensic analysis with specific legal considerations.`
       setCurrentCase(getCurrentCase())
       toast.success('Case cleared - new session started')
     }
-  }
-
-  const handlePromptClick = (prompt: string) => {
-    handleSubmit(prompt)
   }
 
   return (

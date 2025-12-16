@@ -95,8 +95,8 @@ async function loadManifest(caseId: string): Promise<VaultManifest> {
     })
 
     return JSON.parse(result.data as string)
-  } catch (error) {
-    // Create new manifest if doesn't exist
+  } catch {
+    // Create new manifest if doesn't exist - ignore error
     const manifest: VaultManifest = {
       vaultId: `VAULT-${Date.now()}`,
       createdAt: Date.now(),

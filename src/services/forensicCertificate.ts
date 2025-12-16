@@ -3,7 +3,6 @@
  * Generates Nine-Brain forensic analysis certificates for evidence
  */
 
-import { generateBundleHash as generateLegacyBundleHash } from './caseManagement'
 import { 
   generateBundleHash, 
   generateStandaloneCertification,
@@ -34,10 +33,6 @@ export async function generateNineBrainAnalysis(
 ): Promise<NineBrainAnalysis> {
   // In production, this would use actual AI analysis
   // For now, generate structured forensic analysis
-  
-  const contentPreview = typeof content === 'string' 
-    ? content.substring(0, 200) 
-    : `[Binary content: ${content.byteLength} bytes]`
 
   return {
     contextAnalysis: `File "${fileName}" (Type: ${fileType}) analyzed for forensic context. Content structure indicates ${typeof content === 'string' ? 'text-based' : 'binary'} evidence.`,

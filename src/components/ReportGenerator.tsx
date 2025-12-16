@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { FileText, Download, Lock, Image } from '@phosphor-icons/react'
+import { FileText, Download, Image } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { 
   generatePDFReport,
@@ -22,7 +21,6 @@ interface ReportGeneratorProps {
 }
 
 export function ReportGenerator({ documentData, analysisContent }: ReportGeneratorProps) {
-  const [password, setPassword] = useState('')
   const [includeWatermark, setIncludeWatermark] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
 

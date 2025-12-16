@@ -68,8 +68,8 @@ function extractTimelineEvents(
         source: 'metadata',
         confidence: 1.0
       })
-    } catch (e) {
-      // Invalid date
+    } catch {
+      // Invalid date - ignore
     }
   }
   
@@ -81,8 +81,8 @@ function extractTimelineEvents(
         source: 'metadata',
         confidence: 1.0
       })
-    } catch (e) {
-      // Invalid date
+    } catch {
+      // Invalid date - ignore
     }
   }
   
@@ -135,8 +135,8 @@ function extractEventsFromLine(line: string, lineNumber: number): TimelineEvent[
           confidence: 0.9
         })
       }
-    } catch (e) {
-      // Invalid date/time
+    } catch {
+      // Invalid date/time - ignore
     }
   }
   
@@ -168,8 +168,8 @@ function extractEventsFromLine(line: string, lineNumber: number): TimelineEvent[
           confidence: 0.7
         })
       }
-    } catch (e) {
-      // Invalid date
+    } catch {
+      // Invalid date - ignore
     }
   }
   
@@ -214,8 +214,8 @@ function parseDate(dateStr: string): Date | null {
     if (!isNaN(date.getTime())) {
       return date
     }
-  } catch (e) {
-    // Invalid date
+  } catch {
+    // Invalid date - ignore
   }
   
   return null

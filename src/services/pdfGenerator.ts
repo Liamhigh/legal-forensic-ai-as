@@ -406,7 +406,7 @@ export async function generatePDFReport(
   // LAYER 4: Footer certification block (hash, QR, metadata)
   const pages = pdfDoc.getPages()
   const lastPage = pages[pages.length - 1]
-  const { width: pageWidth, height: pageHeight } = lastPage.getSize()
+  const { width: pageWidth } = lastPage.getSize()
   
   // Add certification footer to last page
   const footerY = 150

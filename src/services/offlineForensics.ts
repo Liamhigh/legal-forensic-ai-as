@@ -63,7 +63,7 @@ export interface CaseAnalysisResult {
  */
 export async function analyzeDocumentOffline(
   document: ForensicDocument,
-  context?: { allDocuments?: ForensicDocument[] }
+  _context?: { allDocuments?: ForensicDocument[] }
 ): Promise<ForensicAnalysisResult> {
   // Extract text content for analysis
   const textContent = extractTextContent(document)

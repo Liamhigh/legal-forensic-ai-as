@@ -39,7 +39,7 @@ export interface ContradictionContext {
  */
 export function detectContradictions(
   content: string,
-  context: ContradictionContext
+  _context: ContradictionContext
 ): Contradiction[] {
   const contradictions: Contradiction[] = []
   
@@ -76,7 +76,6 @@ function detectTimelineContradictions(content: string): Contradiction[] {
   
   // Extract time references
   const timePattern = /(\d{1,2}):(\d{2})\s*(am|pm|AM|PM)?/g
-  const datePattern = /(\d{1,2}\/\d{1,2}\/\d{2,4})|(\d{4}-\d{2}-\d{2})/g
   
   const timeReferences: Array<{ time: string; line: number; context: string }> = []
   
@@ -295,8 +294,8 @@ function detectEvidenceContradictions(content: string): Contradiction[] {
           details: `Created: ${created.date}, Modified: ${modified.date}`
         })
       }
-    } catch (e) {
-      // Invalid date format
+    } catch {
+      // Invalid date format - ignore
     }
   }
   
