@@ -101,18 +101,18 @@ export function SessionStatus() {
   return (
     <div className="flex items-center gap-2">
       {sessionLocked ? (
-        <div className="flex items-center gap-2 px-3 py-1 bg-red-100 dark:bg-red-900/20 rounded-md border border-red-300 dark:border-red-800">
-          <LockKey size={16} weight="fill" className="text-red-700 dark:text-red-400" />
-          <span className="text-xs font-medium text-red-800 dark:text-red-300">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-forensic-error-bg rounded-md border border-forensic-error-border">
+          <LockKey size={16} weight="fill" className="text-forensic-error" />
+          <span className="text-xs font-semibold text-forensic-error-text uppercase tracking-wide">
             Session Locked
           </span>
         </div>
       ) : session.isAuthenticated && session.isInstitutional ? (
         <>
-          <div className="flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/20 rounded-md">
-            <ShieldCheck size={16} weight="fill" className="text-green-700 dark:text-green-400" />
-            <span className="text-xs font-medium text-green-800 dark:text-green-300">
-              {session.institutionName}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-forensic-sealed-bg rounded-md border border-forensic-sealed-border">
+            <ShieldCheck size={16} weight="fill" className="text-forensic-sealed" />
+            <span className="text-xs font-semibold text-forensic-sealed-text uppercase tracking-wide">
+              {session.institutionName} — Sealed
             </span>
           </div>
           <Button
@@ -126,9 +126,9 @@ export function SessionStatus() {
         </>
       ) : (
         <>
-          <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/20 rounded-md">
-            <User size={16} weight="regular" className="text-blue-700 dark:text-blue-400" />
-            <span className="text-xs font-medium text-blue-800 dark:text-blue-300">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-forensic-info-bg rounded-md border border-forensic-info-border">
+            <User size={16} weight="regular" className="text-forensic-info" />
+            <span className="text-xs font-semibold text-forensic-info-text uppercase tracking-wide">
               Public Access
             </span>
           </div>

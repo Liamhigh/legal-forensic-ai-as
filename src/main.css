@@ -64,6 +64,24 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  
+  /* Forensic Status Palette */
+  --forensic-sealed: #0F5132;
+  --forensic-sealed-bg: #F0F7F4;
+  --forensic-sealed-border: #C6E4D5;
+  --forensic-sealed-text: #0A3622;
+  --forensic-condition: #B45309;
+  --forensic-condition-bg: #FEF7EE;
+  --forensic-condition-border: #F4D9B8;
+  --forensic-condition-text: #7A3705;
+  --forensic-error: #7F1D1D;
+  --forensic-error-bg: #FEF2F2;
+  --forensic-error-border: #FDD;
+  --forensic-error-text: #5A1313;
+  --forensic-info: #475569;
+  --forensic-info-bg: #F8FAFC;
+  --forensic-info-border: #E2E8F0;
+  --forensic-info-text: #334155;
 }
 
 /*
@@ -101,6 +119,24 @@
   --sidebar-accent-foreground: oklch(0.95 0 0);
   --sidebar-border: oklch(0.2 0 0);
   --sidebar-ring: oklch(0.5 0 0);
+  
+  /* Forensic Status Palette - Dark Mode */
+  --forensic-sealed: #6EE7B7;
+  --forensic-sealed-bg: #064E3B;
+  --forensic-sealed-border: #065F46;
+  --forensic-sealed-text: #D1FAE5;
+  --forensic-condition: #FDB858;
+  --forensic-condition-bg: #78350F;
+  --forensic-condition-border: #92400E;
+  --forensic-condition-text: #FEF3C7;
+  --forensic-error: #FCA5A5;
+  --forensic-error-bg: #7F1D1D;
+  --forensic-error-border: #991B1B;
+  --forensic-error-text: #FEE2E2;
+  --forensic-info: #CBD5E1;
+  --forensic-info-bg: #334155;
+  --forensic-info-border: #475569;
+  --forensic-info-text: #F1F5F9;
 }
 
 /*
@@ -142,6 +178,22 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-forensic-sealed: var(--forensic-sealed);
+  --color-forensic-sealed-bg: var(--forensic-sealed-bg);
+  --color-forensic-sealed-border: var(--forensic-sealed-border);
+  --color-forensic-sealed-text: var(--forensic-sealed-text);
+  --color-forensic-condition: var(--forensic-condition);
+  --color-forensic-condition-bg: var(--forensic-condition-bg);
+  --color-forensic-condition-border: var(--forensic-condition-border);
+  --color-forensic-condition-text: var(--forensic-condition-text);
+  --color-forensic-error: var(--forensic-error);
+  --color-forensic-error-bg: var(--forensic-error-bg);
+  --color-forensic-error-border: var(--forensic-error-border);
+  --color-forensic-error-text: var(--forensic-error-text);
+  --color-forensic-info: var(--forensic-info);
+  --color-forensic-info-bg: var(--forensic-info-bg);
+  --color-forensic-info-border: var(--forensic-info-border);
+  --color-forensic-info-text: var(--forensic-info-text);
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 

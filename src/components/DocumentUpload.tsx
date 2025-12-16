@@ -227,12 +227,12 @@ export function DocumentUpload() {
         ) : (
           <div className="space-y-3">
             <div className={`flex items-center gap-2 p-3 rounded-lg ${
-              uploadedDoc.enforcementDenied ? 'bg-red-50 dark:bg-red-950/20' : 'bg-muted'
+              uploadedDoc.enforcementDenied ? 'bg-forensic-error-bg border border-forensic-error-border' : 'bg-muted'
             }`}>
               {uploadedDoc.enforcementDenied ? (
-                <Warning size={24} weight="fill" className="text-red-600" />
+                <Warning size={24} weight="fill" className="text-forensic-error" />
               ) : (
-                <CheckCircle size={24} weight="fill" className="text-green-600" />
+                <CheckCircle size={24} weight="fill" className="text-forensic-sealed" />
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">
@@ -245,11 +245,11 @@ export function DocumentUpload() {
             </div>
 
             {uploadedDoc.enforcementDenied && uploadedDoc.denialReason && (
-              <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
-                <p className="text-xs font-semibold text-red-900 dark:text-red-100 mb-1">
+              <div className="p-3 bg-forensic-error-bg rounded-lg border border-forensic-error-border">
+                <p className="text-xs font-semibold text-forensic-error-text uppercase tracking-wide mb-1">
                   Constitutional Enforcement Notice
                 </p>
-                <p className="text-xs text-red-800 dark:text-red-200">
+                <p className="text-xs text-forensic-error-text">
                   {uploadedDoc.denialReason}
                 </p>
               </div>
