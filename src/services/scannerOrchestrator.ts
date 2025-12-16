@@ -93,10 +93,12 @@ integrity or legal admissibility of this evidence.
 /**
  * Main scanner orchestration function
  * Guarantees output regardless of AI availability
+ * Supports privacy-aware output modes
  */
 export async function scanEvidence(
   file: File,
-  userMessage?: string
+  userMessage?: string,
+  outputMode: 'full' | 'report-only' = 'full'
 ): Promise<ScannerResult> {
   const fileName = file.name
   
@@ -191,7 +193,8 @@ export async function scanEvidence(
       fileName,
       sealed.seal.documentHash,
       nineBrainAnalysis,
-      sealed.seal.jurisdiction
+      sealed.seal.jurisdiction,
+      outputMode
     )
 
     // Hash the certificate

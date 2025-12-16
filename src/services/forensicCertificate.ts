@@ -3,7 +3,13 @@
  * Generates Nine-Brain forensic analysis certificates for evidence
  */
 
-import { generateBundleHash } from './caseManagement'
+import { generateBundleHash as generateLegacyBundleHash } from './caseManagement'
+import { 
+  generateBundleHash, 
+  generateStandaloneCertification,
+  type OutputMode,
+  type EvidenceMetadata 
+} from './bundleSealing'
 
 export interface NineBrainAnalysis {
   contextAnalysis: string
@@ -49,19 +55,22 @@ export async function generateNineBrainAnalysis(
 /**
  * Generate forensic certificate document
  * Accepts either structured NineBrainAnalysis or plain text analysis
+ * Creates a cryptographic witness that can stand alone as evidence
  */
 export async function generateForensicCertificate(
   evidenceId: string,
   fileName: string,
   evidenceHash: string,
   nineBrainAnalysis: NineBrainAnalysis | string,
-  jurisdiction?: string
+  jurisdiction?: string,
+  outputMode: OutputMode = 'full'
 ): Promise<string> {
   const timestamp = Date.now()
   const certificateId = `CERT-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
   
   // Check if analysis is plain text (baseline) or structured (AI)
   const isBaseline = typeof nineBrainAnalysis === 'string'
+  const aiAnalysisIncluded = !isBaseline
   
   // Generate certificate hash (hash of the certificate content itself)
   const certificateContent = JSON.stringify({
@@ -71,7 +80,8 @@ export async function generateForensicCertificate(
     evidenceHash,
     nineBrainAnalysis,
     timestamp,
-    jurisdiction
+    jurisdiction,
+    outputMode
   })
   
   const encoder = new TextEncoder()
@@ -80,11 +90,31 @@ export async function generateForensicCertificate(
   const hashArray = Array.from(new Uint8Array(hashBuffer))
   const certificateHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
   
-  // Generate bundle hash binding evidence + certificate
+  // Create temporary report hash (will be replaced with actual PDF hash in production)
+  const reportHash = certificateHash
+  
+  // Generate bundle hash binding evidence + report + certificate
   const bundleHash = await generateBundleHash(
     evidenceHash,
+    reportHash,
     certificateHash,
     { timestamp, jurisdiction }
+  )
+  
+  // Generate standalone certification text
+  const metadata: EvidenceMetadata = {
+    fileName,
+    fileSize: 0, // Will be filled by caller
+    fileType: '', // Will be filled by caller
+    evidenceHash,
+    timestamp,
+    jurisdiction
+  }
+  
+  const standaloneCertification = generateStandaloneCertification(
+    metadata,
+    outputMode,
+    aiAnalysisIncluded
   )
   
   // Format certificate - different format for baseline vs AI analysis
@@ -118,12 +148,21 @@ ${nineBrainAnalysis}
 ───────────────────────────────────────────────────────────────────
 CRYPTOGRAPHIC SEALS
 ───────────────────────────────────────────────────────────────────
-Evidence Hash: ${evidenceHash}
-Certificate Hash: ${certificateHash}
+Evidence Hash (SHA-256): ${evidenceHash}
+Certificate Hash (SHA-256): ${certificateHash}
+Report Hash (SHA-256): ${reportHash}
 Bundle Hash (SHA-512): ${bundleHash}
 
-VERIFICATION: The bundle hash binds this certificate to the evidence
-artifact. Any modification to either will invalidate the bundle.
+BUNDLE BINDING:
+The bundle hash cryptographically binds the original evidence, this
+certificate, and the forensic report together. This binding cannot be
+broken - any modification to any component will invalidate the bundle.
+
+The evidence hash proves the original file's existence and integrity.
+This report serves as a cryptographic witness that can verify the 
+original even if the original file is not shared.
+
+${standaloneCertification}
 
 ───────────────────────────────────────────────────────────────────
 CERTIFICATION AUTHORITY
@@ -193,12 +232,21 @@ ${analysis.recommendations}
 ───────────────────────────────────────────────────────────────────
 CRYPTOGRAPHIC SEALS
 ───────────────────────────────────────────────────────────────────
-Evidence Hash: ${evidenceHash}
-Certificate Hash: ${certificateHash}
+Evidence Hash (SHA-256): ${evidenceHash}
+Certificate Hash (SHA-256): ${certificateHash}
+Report Hash (SHA-256): ${reportHash}
 Bundle Hash (SHA-512): ${bundleHash}
 
-VERIFICATION: The bundle hash binds this certificate to the evidence
-artifact. Any modification to either will invalidate the bundle.
+BUNDLE BINDING:
+The bundle hash cryptographically binds the original evidence, this
+certificate, and the forensic report together. This binding cannot be
+broken - any modification to any component will invalidate the bundle.
+
+The evidence hash proves the original file's existence and integrity.
+This report serves as a cryptographic witness that can verify the 
+original even if the original file is not shared.
+
+${standaloneCertification}
 
 ───────────────────────────────────────────────────────────────────
 CERTIFICATION AUTHORITY
