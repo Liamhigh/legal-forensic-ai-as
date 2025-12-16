@@ -463,31 +463,31 @@ Provide a thorough forensic analysis with specific legal considerations.`
   }
 
   return (
-    <div className="flex flex-col bg-background" style={{ 
+    <div className="flex flex-col bg-background w-full" style={{ 
       maxWidth: '100vw', 
       overflowX: 'hidden',
-      minHeight: '100vh',
-      height: '100vh'
+      minHeight: '100dvh', // Dynamic viewport height for mobile
+      height: '100dvh'
     }}>
       {/* Minimal Header */}
-      <header className="border-b border-border bg-card px-4 py-3 flex-shrink-0">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <header className="border-b border-border bg-card px-3 sm:px-4 py-2.5 sm:py-3 flex-shrink-0">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <img 
               src="/assets/company-logo-2.jpg" 
               alt="Verum Omnis Logo" 
-              className="h-8 w-8 object-contain rounded"
+              className="h-7 w-7 sm:h-8 sm:w-8 object-contain rounded flex-shrink-0"
             />
-            <div>
-              <h1 className="text-base font-semibold tracking-tight text-foreground">
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-base font-semibold tracking-tight text-foreground truncate">
                 Verum Omnis
               </h1>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground truncate">
                 Case {currentCase.caseId.substring(5, 13)}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <SessionStatus />
             <CaseExport />
             {messages.length > 1 && (
@@ -505,30 +505,30 @@ Provide a thorough forensic analysis with specific legal considerations.`
       </header>
 
       {/* Main Chat Area - Full Height */}
-      <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div ref={scrollRef} className="max-w-3xl mx-auto px-4 py-6" style={{ width: '100%' }}>
+      <div className="flex-1 overflow-hidden w-full">
+        <ScrollArea className="h-full w-full">
+          <div ref={scrollRef} className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 w-full" style={{ boxSizing: 'border-box' }}>
             {messages.length === 0 || (messages.length === 1 && messages[0].id === 'welcome') ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4"
+                className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] text-center px-4 w-full"
               >
                 <img 
                   src="/assets/company-logo-2.jpg" 
                   alt="Verum Omnis Logo" 
-                  className="h-20 w-20 object-contain rounded-lg mb-6"
+                  className="h-16 w-16 sm:h-20 sm:w-20 object-contain rounded-lg mb-4 sm:mb-6"
                 />
-                <h2 className="text-2xl font-semibold text-foreground mb-3">
+                <h2 className="text-xl sm:text-2xl font-semibold text-foreground mb-2 sm:mb-3">
                   Welcome to Verum Omnis
                 </h2>
-                <p className="text-lg text-muted-foreground mb-6 max-w-2xl leading-relaxed">
+                <p className="text-base sm:text-lg text-muted-foreground mb-4 sm:mb-6 max-w-2xl leading-relaxed">
                   Your forensic thinking partner. Add evidence, ask questions, or request documents.
                   Everything is automatically sealed and added to your case.
                 </p>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-full px-4 py-2">
-                  <Lightbulb size={16} weight="duotone" className="text-muted-foreground" aria-hidden="true" />
-                  <span>Click the <strong>+</strong> button below to see suggested actions</span>
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-muted/50 rounded-full px-3 sm:px-4 py-2">
+                  <Lightbulb size={16} weight="duotone" className="text-muted-foreground flex-shrink-0" aria-hidden="true" />
+                  <span className="text-center">Click the <strong>+</strong> button below to see suggested actions</span>
                 </div>
               </motion.div>
             ) : (
@@ -572,8 +572,8 @@ Provide a thorough forensic analysis with specific legal considerations.`
       </div>
 
       {/* Input Area - Fixed Bottom */}
-      <div className="border-t border-border bg-card px-4 py-4 flex-shrink-0">
-        <div className="max-w-3xl mx-auto" style={{ maxWidth: 'var(--max-width-chat, 680px)' }}>
+      <div className="border-t border-border bg-card px-3 sm:px-4 py-3 sm:py-4 flex-shrink-0 w-full">
+        <div className="max-w-3xl mx-auto w-full" style={{ maxWidth: 'var(--max-width-chat, 680px)', boxSizing: 'border-box' }}>
           <UnifiedInput
             onSubmit={handleSubmit}
             disabled={isLoading}

@@ -31,9 +31,9 @@ export function SealedArtifacts({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
-      className="flex justify-center my-4"
+      className="flex justify-center my-3 sm:my-4 w-full"
     >
-      <div className="bg-card border border-border rounded-lg p-4 max-w-2xl w-full shadow-sm">
+      <div className="bg-card border border-border rounded-lg p-3 sm:p-4 max-w-2xl w-full shadow-sm">
         {/* Header */}
         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
           <Lock size={20} weight="fill" className="text-forensic-sealed" />
