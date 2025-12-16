@@ -248,28 +248,50 @@ Provide a thorough forensic analysis with specific legal considerations.`
       const result = await scanEvidence(file, userMessage)
       
       // Update current case state
-      setCurrentCase(getCurrentCase())
+      const caseData = getCurrentCase()
+      setCurrentCase(caseData)
 
-      // Show sealed artifacts in chat
-      const sealedMessage: ChatMessage = {
-        id: `sealed-${Date.now()}`,
+      // Extract forensic narrative from certificate content
+      const certificateText = result.certificateContent || ''
+      const integritySummary = '✓ Document received and hashed successfully\n✓ SHA-256 cryptographic hash generated\n✓ Document sealed with forensic marker\n✓ Timestamp recorded\n✓ Cryptographically bound certificate generated'
+      
+      // Parse certificate to extract analysis
+      let findings = 'Forensic analysis complete. Document integrity verified.'
+      let aiAnalysis: string | undefined
+      
+      if (certificateText.includes('NINE-BRAIN AI ANALYSIS')) {
+        // AI analysis included
+        aiAnalysis = certificateText.split('NINE-BRAIN AI ANALYSIS')[1]?.split('---')[0]?.trim() || undefined
+      } else if (certificateText.includes('BASELINE FORENSIC ANALYSIS')) {
+        // Baseline analysis
+        findings = certificateText.split('BASELINE FORENSIC ANALYSIS')[1]?.split('---')[0]?.trim() || findings
+      }
+
+      // Show forensic narrative in chat
+      const narrativeMessage: ChatMessage = {
+        id: `narrative-${Date.now()}`,
         role: 'system',
         content: result.aiAnalysisIncluded 
-          ? '✅ Document scanned and sealed\n🔒 Certificate generated and bound\n🤖 AI analysis included\n📁 Added to current case'
-          : '✅ Document scanned and sealed\n🔒 Certificate generated and bound\n⚠️ AI analysis unavailable - baseline scan completed\n📁 Added to current case',
+          ? '✅ Evidence scanned and sealed — Forensic analysis complete'
+          : '✅ Evidence scanned and sealed — Baseline analysis complete',
         timestamp: Date.now(),
-        sealedArtifacts: {
+        forensicNarrative: {
+          caseId: caseData.caseId,
           fileName: file.name,
           evidenceHash: result.evidenceHash,
+          timestamp: Date.now(),
+          jurisdiction: caseData.jurisdiction,
           certificateId: result.certificateId,
           certificateHash: result.certificateHash,
           bundleHash: result.bundleHash,
-          documentContent: result.documentContent,
-          certificateContent: result.certificateContent
+          integritySummary,
+          findings: certificateText || findings,
+          aiAnalysisIncluded: result.aiAnalysisIncluded,
+          aiAnalysis: result.aiAnalysisIncluded ? aiAnalysis : undefined
         }
       }
 
-      setMessages((current) => [...current, sealedMessage])
+      setMessages((current) => [...current, narrativeMessage])
 
     } catch (error) {
       console.error('Error processing evidence:', error)

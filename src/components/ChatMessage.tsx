@@ -5,7 +5,7 @@
 
 import { CheckCircle, Lock, FileText } from '@phosphor-icons/react'
 import { DocumentScannerIndicator } from '@/components/DocumentScannerIndicator'
-import { SealedArtifacts } from '@/components/SealedArtifacts'
+import { ForensicNarrative, type ForensicNarrativeData } from '@/components/ForensicNarrative'
 
 export interface ChatMessage {
   id: string
@@ -27,6 +27,8 @@ export interface ChatMessage {
     documentContent?: string | ArrayBuffer
     certificateContent?: string
   }
+  // New: Forensic narrative data
+  forensicNarrative?: ForensicNarrativeData
   scanningState?: {
     fileName: string
     phase: 'received' | 'verifying' | 'analyzing' | 'generating-cert' | 'sealing'
@@ -48,45 +50,29 @@ export function ChatMessageComponent({ message }: ChatMessageProps) {
     )
   }
 
-  // Sealed artifacts display
+  // Forensic narrative display (NEW - narrative-first approach)
+  if (message.role === 'system' && message.forensicNarrative) {
+    return <ForensicNarrative data={message.forensicNarrative} />
+  }
+
+  // Legacy: Sealed artifacts display (keeping for backwards compatibility)
+  // This will be phased out as we migrate to narrative-first
   if (message.role === 'system' && message.sealedArtifacts) {
-    const downloadDocument = () => {
-      if (!message.sealedArtifacts?.documentContent) return
-      const blob = new Blob([message.sealedArtifacts.documentContent], { type: 'text/plain' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `sealed_${message.sealedArtifacts.fileName}`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+    // Convert legacy sealedArtifacts to forensicNarrative format
+    const narrativeData: ForensicNarrativeData = {
+      caseId: message.sealedArtifacts.certificateId.split('-')[1] || 'N/A',
+      fileName: message.sealedArtifacts.fileName,
+      evidenceHash: message.sealedArtifacts.evidenceHash,
+      timestamp: Date.now(),
+      certificateId: message.sealedArtifacts.certificateId,
+      certificateHash: message.sealedArtifacts.certificateHash,
+      bundleHash: message.sealedArtifacts.bundleHash,
+      integritySummary: '✓ Document received and hashed successfully\n✓ SHA-256 cryptographic hash generated\n✓ Document sealed with forensic marker\n✓ Timestamp recorded',
+      findings: message.sealedArtifacts.certificateContent || 'Forensic analysis in progress...',
+      aiAnalysisIncluded: false
     }
-
-    const downloadCertificate = () => {
-      if (!message.sealedArtifacts?.certificateContent) return
-      const blob = new Blob([message.sealedArtifacts.certificateContent], { type: 'text/plain' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `certificate_${message.sealedArtifacts.certificateId}.txt`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    }
-
-    return (
-      <SealedArtifacts
-        fileName={message.sealedArtifacts.fileName}
-        evidenceHash={message.sealedArtifacts.evidenceHash}
-        certificateId={message.sealedArtifacts.certificateId}
-        certificateHash={message.sealedArtifacts.certificateHash}
-        bundleHash={message.sealedArtifacts.bundleHash}
-        onDownloadDocument={message.sealedArtifacts.documentContent ? downloadDocument : undefined}
-        onDownloadCertificate={message.sealedArtifacts.certificateContent ? downloadCertificate : undefined}
-      />
-    )
+    
+    return <ForensicNarrative data={narrativeData} />
   }
 
   if (message.role === 'system') {
