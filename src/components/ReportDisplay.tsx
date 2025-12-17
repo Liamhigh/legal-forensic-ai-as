@@ -1,19 +1,26 @@
 /**
  * Report Display Component
  * Shows forensic certificate and analysis reports on screen
- * Allows users to ask follow-up questions about the report
+ * 
+ * Per forensic pipeline requirements:
+ * - Text-based forensic narrative display
+ * - Single "Print to PDF" option (no immediate download/export)
+ * - Allows users to ask follow-up questions about the report
  */
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { FileText, CaretDown, CaretUp, Download } from '@phosphor-icons/react'
+import { FileText, CaretDown, CaretUp, Printer } from '@phosphor-icons/react'
 import { Card } from '@/components/ui/card'
+import { toast } from 'sonner'
+import { generatePDFReport, downloadPDF, type PDFReportData } from '@/services/pdfGenerator'
 
 export interface ReportDisplayProps {
   certificateContent: string
   fileName: string
   evidenceHash: string
+  caseId?: string
   onAskQuestion?: (question: string) => void
 }
 
@@ -21,23 +28,55 @@ export function ReportDisplay({
   certificateContent, 
   fileName, 
   evidenceHash,
+  caseId,
   onAskQuestion 
 }: ReportDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(true)
+  const [isPrinting, setIsPrinting] = useState(false)
   
   // Extract key sections from the certificate
   const sections = extractSections(certificateContent)
   
-  const handleDownload = () => {
-    const blob = new Blob([certificateContent], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `certificate_${fileName}_${Date.now()}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+  /**
+   * Print to PDF - renders the existing sealed report as PDF
+   * This does NOT regenerate or reanalyze - just prints existing content
+   */
+  const handlePrintToPDF = async () => {
+    setIsPrinting(true)
+    try {
+      const reportData: PDFReportData = {
+        title: `Forensic Report - ${fileName}`,
+        content: certificateContent,
+        documentInfo: {
+          fileName,
+          hash: evidenceHash,
+          timestamp: Date.now()
+        },
+        sealInfo: {
+          sealedBy: 'Verum Omnis Forensics',
+          timestamp: Date.now()
+        }
+      }
+
+      const pdfBytes = await generatePDFReport(reportData, {
+        includeWatermark: false
+      })
+
+      const pdfFileName = caseId 
+        ? `${caseId}_forensic_report.pdf`
+        : `forensic_report_${Date.now()}.pdf`
+      
+      downloadPDF(pdfBytes, pdfFileName)
+      
+      toast.success('Report printed to PDF', {
+        description: 'The sealed forensic report has been exported'
+      })
+    } catch (error) {
+      console.error('Failed to print to PDF:', error)
+      toast.error('Failed to print report')
+    } finally {
+      setIsPrinting(false)
+    }
   }
   
   const suggestedQuestions = [
@@ -68,13 +107,16 @@ export function ReportDisplay({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Single Print to PDF action */}
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            onClick={handleDownload}
-            className="h-8 w-8 p-0"
+            onClick={handlePrintToPDF}
+            disabled={isPrinting}
+            className="h-8 gap-1.5 text-xs"
           >
-            <Download size={16} weight="regular" />
+            <Printer size={14} weight="regular" />
+            {isPrinting ? 'Printing...' : 'Print to PDF'}
           </Button>
           <Button
             variant="ghost"
@@ -131,6 +173,13 @@ export function ReportDisplay({
           </div>
         </div>
       )}
+      
+      {/* Footer note */}
+      <div className="pt-2 border-t border-border">
+        <p className="text-xs text-muted-foreground/70 text-center">
+          The authoritative sealed artefact is stored in the backend.
+        </p>
+      </div>
     </Card>
   )
 }

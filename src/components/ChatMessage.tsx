@@ -1,6 +1,11 @@
 /**
  * Chat Message Component
  * Displays user and assistant messages with support for evidence sealing feedback
+ * 
+ * Per forensic pipeline requirements:
+ * - Shows status indicators and integrity confirmations
+ * - No immediate download/export options
+ * - Documents remain in the backend
  */
 
 import { CheckCircle, Lock, FileText } from '@phosphor-icons/react'
@@ -25,7 +30,7 @@ export interface ChatMessage {
     certificateId: string
     certificateHash: string
     bundleHash: string
-    documentContent?: string | ArrayBuffer
+    caseId?: string
     certificateContent?: string
   }
   scanningState?: {
@@ -50,34 +55,8 @@ export function ChatMessageComponent({ message }: ChatMessageProps) {
     )
   }
 
-  // Sealed artifacts display
+  // Sealed artifacts display - no download options per forensic pipeline
   if (message.role === 'system' && message.sealedArtifacts) {
-    const downloadDocument = () => {
-      if (!message.sealedArtifacts?.documentContent) return
-      const blob = new Blob([message.sealedArtifacts.documentContent], { type: 'text/plain' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `sealed_${message.sealedArtifacts.fileName}`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    }
-
-    const downloadCertificate = () => {
-      if (!message.sealedArtifacts?.certificateContent) return
-      const blob = new Blob([message.sealedArtifacts.certificateContent], { type: 'text/plain' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `certificate_${message.sealedArtifacts.certificateId}.txt`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    }
-
     return (
       <div className="space-y-3">
         <SealedArtifacts
@@ -86,8 +65,6 @@ export function ChatMessageComponent({ message }: ChatMessageProps) {
           certificateId={message.sealedArtifacts.certificateId}
           certificateHash={message.sealedArtifacts.certificateHash}
           bundleHash={message.sealedArtifacts.bundleHash}
-          onDownloadDocument={message.sealedArtifacts.documentContent ? downloadDocument : undefined}
-          onDownloadCertificate={message.sealedArtifacts.certificateContent ? downloadCertificate : undefined}
         />
         
         {/* Display the certificate report for user to ask questions */}
@@ -96,6 +73,7 @@ export function ChatMessageComponent({ message }: ChatMessageProps) {
             certificateContent={message.sealedArtifacts.certificateContent}
             fileName={message.sealedArtifacts.fileName}
             evidenceHash={message.sealedArtifacts.evidenceHash}
+            caseId={message.sealedArtifacts.caseId}
             onAskQuestion={message.onAskQuestion}
           />
         )}
