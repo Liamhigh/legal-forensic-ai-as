@@ -163,11 +163,7 @@ export async function createForensicCase(
     : originalContent
 
   // STEP 1: Generate document hash
-  const documentHash = await generateHash(
-    typeof documentContent === 'string' 
-      ? documentContent 
-      : documentContent
-  )
+  const documentHash = await generateHash(documentContent)
 
   // STEP 2: Generate report hash
   const reportHash = await generateHash(analysisContent)
@@ -438,11 +434,7 @@ export async function verifyCaseIntegrity(caseId: string): Promise<IntegrityStat
 
   // Verify document hash
   const documentContent = caseArtefacts.originalDocument.content
-  const currentDocHash = await generateHash(
-    typeof documentContent === 'string' 
-      ? documentContent 
-      : documentContent
-  )
+  const currentDocHash = await generateHash(documentContent)
   const documentValid = currentDocHash === caseArtefacts.cryptoHashSet.documentHash
 
   // Verify against integrity guard registry
@@ -458,11 +450,7 @@ export async function verifyCaseIntegrity(caseId: string): Promise<IntegrityStat
 
   // Verify report hash
   const reportContent = caseArtefacts.forensicReport.content
-  const currentReportHash = await generateHash(
-    typeof reportContent === 'string' 
-      ? reportContent 
-      : reportContent
-  )
+  const currentReportHash = await generateHash(reportContent)
   const reportValid = currentReportHash === caseArtefacts.cryptoHashSet.reportHash
 
   // Verify against integrity guard registry
