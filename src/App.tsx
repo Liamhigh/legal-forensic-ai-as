@@ -289,15 +289,17 @@ Provide a thorough forensic analysis with specific legal considerations.`
       const result = await scanEvidence(file, userMessage)
       
       // Update current case state
-      setCurrentCase(getCurrentCase())
+      const caseData = getCurrentCase()
+      setCurrentCase(caseData)
 
-      // Show sealed artifacts in chat
+      // Show sealed artifacts in chat - no document content for download
+      // Per forensic pipeline: documents remain in backend, UI shows narrative only
       const sealedMessage: ChatMessage = {
         id: `sealed-${Date.now()}`,
         role: 'system',
         content: result.aiAnalysisIncluded 
-          ? '✅ Document scanned and sealed\n🔒 Certificate generated and bound\n🤖 AI analysis included\n📁 Added to current case'
-          : '✅ Document scanned and sealed\n🔒 Certificate generated and bound\n⚠️ AI analysis unavailable - baseline scan completed\n📁 Added to current case',
+          ? '✅ Document scanned and sealed\n🔒 Certificate generated and bound\n🤖 AI analysis included\n📁 Stored in backend'
+          : '✅ Document scanned and sealed\n🔒 Certificate generated and bound\n⚠️ AI analysis unavailable - baseline scan completed\n📁 Stored in backend',
         timestamp: Date.now(),
         sealedArtifacts: {
           fileName: file.name,
@@ -305,7 +307,7 @@ Provide a thorough forensic analysis with specific legal considerations.`
           certificateId: result.certificateId,
           certificateHash: result.certificateHash,
           bundleHash: result.bundleHash,
-          documentContent: result.documentContent,
+          caseId: caseData.caseId,
           certificateContent: result.certificateContent
         },
         onAskQuestion: (question: string) => {

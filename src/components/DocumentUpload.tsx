@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Upload, CheckCircle, Shield, Download, Warning } from '@phosphor-icons/react'
+import { Upload, CheckCircle, Shield, Warning } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { sealDocument, verifySeal, formatSealInfo } from '@/services/documentSealing'
 import { 
@@ -16,7 +16,6 @@ import { getCurrentSession, lockSession } from '@/services/authContext'
 
 interface UploadedDocument {
   name: string
-  content: string | ArrayBuffer
   sealed: boolean
   sealInfo?: string
   enforcementDenied?: boolean
@@ -90,7 +89,6 @@ export function DocumentUpload() {
 
         setUploadedDoc({
           name: file.name,
-          content: sealedRefusal.originalContent,
           sealed: true,
           sealInfo: formatSealInfo(sealedRefusal.seal),
           enforcementDenied: true,
@@ -123,12 +121,8 @@ export function DocumentUpload() {
           toast.success('✓ Document verified - Already sealed by Verum Omnis', {
             description: verification.message
           })
-          const contentForStorage = typeof sealed.originalContent === 'string' 
-            ? sealed.originalContent 
-            : sealed.originalContent
           setUploadedDoc({
             name: file.name,
-            content: contentForStorage,
             sealed: true,
             sealInfo: verification.seal ? formatSealInfo(verification.seal) : 'Verified'
           })
@@ -143,13 +137,8 @@ export function DocumentUpload() {
         toast.success('✓ Document sealed cryptographically', {
           description: `Sealed with ${sealed.seal.jurisdiction || 'location data'}`
         })
-        // Store original content - convert for storage
-        const contentForStorage = typeof sealed.originalContent === 'string' 
-          ? sealed.originalContent 
-          : sealed.originalContent
         setUploadedDoc({
           name: file.name,
-          content: contentForStorage,
           sealed: true,
           sealInfo: formatSealInfo(sealed.seal)
         })
@@ -165,27 +154,6 @@ export function DocumentUpload() {
         fileInputRef.current.value = ''
       }
     }
-  }
-
-  const handleDownload = () => {
-    if (!uploadedDoc) return
-
-    // Determine MIME type based on file extension
-    const mimeType = uploadedDoc.name.endsWith('.pdf') ? 'application/pdf' :
-                     uploadedDoc.name.endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :
-                     'text/plain'
-
-    const blob = new Blob([uploadedDoc.content], { type: mimeType })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `sealed_${uploadedDoc.name}`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    
-    toast.success('Sealed document downloaded')
   }
 
   const handleUploadClick = () => {
@@ -239,7 +207,7 @@ export function DocumentUpload() {
                   {uploadedDoc.name}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {uploadedDoc.enforcementDenied ? 'Processing denied - sealed refusal report' : 'Cryptographically sealed'}
+                  {uploadedDoc.enforcementDenied ? 'Processing denied - sealed refusal report' : 'Cryptographically sealed - stored in backend'}
                 </p>
               </div>
             </div>
@@ -263,30 +231,21 @@ export function DocumentUpload() {
               </div>
             )}
 
-            <div className="flex gap-2">
-              <Button
-                onClick={handleDownload}
-                variant="outline"
-                className="flex-1"
-              >
-                <Download size={18} weight="regular" className="mr-2" />
-                Download {uploadedDoc.enforcementDenied ? 'Report' : 'Sealed'}
-              </Button>
-              <Button
-                onClick={handleUploadClick}
-                variant="outline"
-                className="flex-1"
-              >
-                <Upload size={18} weight="regular" className="mr-2" />
-                Upload Another
-              </Button>
-            </div>
+            <Button
+              onClick={handleUploadClick}
+              variant="outline"
+              className="w-full"
+            >
+              <Upload size={18} weight="regular" className="mr-2" />
+              Upload Another
+            </Button>
           </div>
         )}
 
         <div className="text-xs text-muted-foreground space-y-1">
           <p>• Documents are sealed with cryptographic hash verification</p>
           <p>• Location and jurisdiction data included automatically</p>
+          <p>• Artefacts are stored in the backend for forensic integrity</p>
           <p>• Previously sealed documents are verified, not re-sealed</p>
         </div>
       </div>

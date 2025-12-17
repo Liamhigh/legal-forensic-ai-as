@@ -1,27 +1,32 @@
 /**
  * Case Export Component
- * Exports the full sealed case narrative as a PDF
+ * Prints the full sealed case narrative as a PDF
+ * 
+ * Per forensic pipeline requirements:
+ * - Single "Print to PDF" option (on user request)
+ * - No immediate download/export buttons
+ * - Simply renders the sealed report as PDF, no regeneration/reanalysis/new hash
  */
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Download, Package } from '@phosphor-icons/react'
+import { Printer } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { getCurrentCase } from '@/services/caseManagement'
 import { generatePDFReport, downloadPDF, type PDFReportData } from '@/services/pdfGenerator'
 
 export function CaseExport() {
-  const [isExporting, setIsExporting] = useState(false)
+  const [isPrinting, setIsPrinting] = useState(false)
 
-  const handleExport = async () => {
-    setIsExporting(true)
+  const handlePrintToPDF = async () => {
+    setIsPrinting(true)
 
     try {
       const currentCase = getCurrentCase()
 
       if (currentCase.evidence.length === 0 && currentCase.conversationLog.length === 0) {
-        toast.error('No case data to export')
-        setIsExporting(false)
+        toast.error('No case data to print')
+        setIsPrinting(false)
         return
       }
 
@@ -84,7 +89,7 @@ export function CaseExport() {
       narrative += `This case narrative preserves the complete forensic record.\n`
       narrative += `All evidence artifacts and certificates remain cryptographically bound.\n`
 
-      // Generate PDF - optimized for size
+      // Generate PDF - renders existing sealed content (no regeneration)
       const reportData: PDFReportData = {
         title: `Case ${currentCase.caseId} - Full Sealed Narrative`,
         content: narrative,
@@ -95,39 +100,39 @@ export function CaseExport() {
       }
 
       const pdfBytes = await generatePDFReport(reportData, {
-        includeWatermark: false, // Disabled for smaller file size
-        watermarkOpacity: 0.05 // Even lighter if enabled
+        includeWatermark: false
       })
 
       downloadPDF(pdfBytes, `${currentCase.caseId}_sealed_narrative.pdf`)
 
-      toast.success('Case narrative exported successfully', {
+      toast.success('Case narrative printed to PDF', {
         description: 'Full sealed case record is ready'
       })
     } catch (error) {
-      console.error('Export error:', error)
-      toast.error('Failed to export case narrative')
+      console.error('Print error:', error)
+      toast.error('Failed to print case narrative')
     } finally {
-      setIsExporting(false)
+      setIsPrinting(false)
     }
   }
 
   return (
     <Button
-      onClick={handleExport}
-      disabled={isExporting}
+      onClick={handlePrintToPDF}
+      disabled={isPrinting}
       variant="outline"
+      size="sm"
       className="gap-2"
     >
-      {isExporting ? (
+      {isPrinting ? (
         <>
-          <Package size={18} weight="regular" className="animate-pulse" />
-          Exporting...
+          <Printer size={16} weight="regular" className="animate-pulse" />
+          <span className="hidden sm:inline">Printing...</span>
         </>
       ) : (
         <>
-          <Download size={18} weight="regular" />
-          Export full sealed case narrative
+          <Printer size={16} weight="regular" />
+          <span className="hidden sm:inline">Print to PDF</span>
         </>
       )}
     </Button>
