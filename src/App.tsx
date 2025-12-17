@@ -111,8 +111,20 @@ function App() {
     // Check for accusations/timeline disputes (passive detection)
     const accusationDetection = detectAccusation(message)
     
-    // Handle file uploads (evidence)
+    // Handle file uploads (evidence) - Scanner action, not conversational chat
     if (files && files.length > 0) {
+      // For scanner commands, add a distinct "Scanner task initiated" message
+      // instead of a regular chat bubble
+      const scannerMessage: ChatMessage = {
+        id: `scanner-${Date.now()}`,
+        role: 'user',
+        content: message || 'Scanning evidence...',
+        timestamp: Date.now(),
+        isScannerCommand: true,
+        scannerFileName: files.map(f => f.name).join(', ')
+      }
+      setMessages((current) => [...current, scannerMessage])
+      
       for (const file of files) {
         await handleEvidenceUpload(file, message)
       }
@@ -121,7 +133,7 @@ function App() {
       if (!message) return
     }
 
-    // Add user message
+    // Add user message - only for conversational chat (no files)
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',

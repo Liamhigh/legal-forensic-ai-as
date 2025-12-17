@@ -1,12 +1,16 @@
 /**
  * Chat Message Component
  * Displays user and assistant messages with support for evidence sealing feedback
+ * 
+ * Conceptual Rule:
+ * Chat speaks. Scanner acts. They are never visually identical.
  */
 
 import { CheckCircle, Lock, FileText } from '@phosphor-icons/react'
 import { DocumentScannerIndicator } from '@/components/DocumentScannerIndicator'
 import { SealedArtifacts } from '@/components/SealedArtifacts'
 import { ReportDisplay } from '@/components/ReportDisplay'
+import { ScannerTaskInitiated } from '@/components/ScannerTaskInitiated'
 
 export interface ChatMessage {
   id: string
@@ -33,6 +37,10 @@ export interface ChatMessage {
     phase: 'received' | 'verifying' | 'analyzing' | 'generating-cert' | 'sealing'
   }
   onAskQuestion?: (question: string) => void
+  /** Indicates this message triggered a scanner action (not conversational chat) */
+  isScannerCommand?: boolean
+  /** File name associated with scanner command */
+  scannerFileName?: string
 }
 
 interface ChatMessageProps {
@@ -40,6 +48,17 @@ interface ChatMessageProps {
 }
 
 export function ChatMessageComponent({ message }: ChatMessageProps) {
+  // Scanner command - show distinct non-chat visual
+  // "Chat speaks. Scanner acts. They are never visually identical."
+  if (message.role === 'user' && message.isScannerCommand) {
+    return (
+      <ScannerTaskInitiated
+        timestamp={message.timestamp}
+        fileName={message.scannerFileName}
+      />
+    )
+  }
+
   // Scanner state indicator
   if (message.role === 'system' && message.scanningState) {
     return (
