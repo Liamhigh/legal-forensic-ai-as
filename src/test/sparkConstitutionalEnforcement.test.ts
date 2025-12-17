@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
   validateConstitutionalCompliance,
-  logConstitutionalViolation,
   generateComplianceReport,
   CONSTITUTIONAL_SYSTEM_PROMPT
 } from '../services/sparkBackendIntegration'
