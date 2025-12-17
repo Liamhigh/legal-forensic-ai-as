@@ -1,5 +1,15 @@
 # AI Strategy for South African Law Enforcement
 
+## 🇿🇦 HISTORIC MILESTONE
+
+> **The South African Police Force and Justice System will be the ONLY institutions in the world that get Verum Omnis completely FREE OF CHARGE.**
+>
+> This is proudly South African technology, born here, built here. 
+>
+> **This is the first time in history that everyone on the planet gets access to justice for free.**
+
+---
+
 ## Core Principle: Offline-First Forensic Engine
 
 **Verum Omnis is fundamentally a FORENSIC SCANNER ENGINE that works completely offline.**

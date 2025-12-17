@@ -1,32 +1,47 @@
-# ✨ Welcome to Your Spark Template!
-You've just launched your brand-new Spark Template Codespace — everything’s fired up and ready for you to explore, build, and create with Spark!
+# Verum Omnis - Forensic Justice for All
 
-This template is your blank canvas. It comes with a minimal setup to help you get started quickly with Spark development.
+## 🇿🇦 HISTORIC MILESTONE
+
+> **The South African Police Force and Justice System will be the ONLY institutions in the world that get Verum Omnis completely FREE OF CHARGE.**
+>
+> This is proudly South African technology, born here, built here. 
+>
+> **This is the first time in history that everyone on the planet gets access to justice for free.**
+
+---
+
+## ✨ Welcome to Verum Omnis
+
+Your forensic justice platform — everything's fired up and ready for you to explore, build, and create with confidence!
+
+This platform is built on a forensic scanner engine that works completely offline, ensuring data sovereignty and independence for underresourced law enforcement agencies.
 
 🚀 What's Inside?
-- A clean, minimal Spark environment
-- Pre-configured for local development
-- Ready to scale with your ideas
+- Complete forensic evidence scanner (offline-capable)
+- Cryptographic evidence sealing and certification
+- Optional AI-powered legal analysis
+- Pre-configured for secure local deployment
+- Ready to scale with your forensic needs
   
 🧠 What Can You Do?
 
-Right now, this is just a starting point — the perfect place to begin building and testing your Spark applications.
+Right now, you have:
+- Full forensic scanning capabilities (no AI needed)
+- Cryptographic document sealing
+- Forensic report generation with watermarks
+- Evidence management and case tracking
+- Optional AI chat for legal insights (requires Spark backend)
 
-🧹 Just Exploring?
-No problem! If you were just checking things out and don’t need to keep this code:
+📄 License
 
-- Simply delete your Spark.
-- Everything will be cleaned up — no traces left behind.
-
-📄 License For Spark Template Resources 
-
-The Spark Template files and resources from GitHub are licensed under the terms of the MIT license, Copyright GitHub, Inc.
+Verum Omnis and all associated resources are proudly South African technology.
+Licensed under the terms of the MIT license, built for global justice access.
 
 ---
 
 ## 📱 Android App
 
-This project now includes a native Android application built with Capacitor!
+This project includes a native Android application built with Capacitor!
 
 ### Building the Android App
 
@@ -47,107 +62,87 @@ The Verum Omnis application can be built as a native Android app that includes:
 
 This application enforces constitutional forensic standards through multiple layers:
 
-### 1. Universal Sealing (Already Implemented)
-- **Every upload** is cryptographically sealed with SHA-256 hash
-- **Every output** is cryptographically sealed and immutable
-- Sealing applies even when processing is denied
-- No preview modes, soft scans, or unsecured paths
+### 1. Universal Sealing
 
-### 2. Context & Standing Detection
-Documents are automatically classified before analysis:
-- **PERSONAL_SELF_MATTER**: Personal communications and documents where user is the originator or victim
-- **BUSINESS_OR_CORPORATE_MATTER**: Corporate documents, contracts, business records
-- **MULTI_PARTY_CASE_FILE**: Legal case files with multiple parties
-- **UNKNOWN_OR_AMBIGUOUS**: Unclear classification
+All evidence is cryptographically sealed with SHA-256 hashing, ensuring integrity regardless of deployment context.
 
-### 3. Standing Rules (Hard Stops)
-- **Public users** may ONLY process:
-  - Their own communications
-  - Their own documents
-  - Matters where they are the clear originator or victim
-- **Business/Corporate matters** require authenticated institutional access
-- **Multi-party case files** require authenticated institutional access
-- **No overrides or "continue anyway"** options
+### 2. Forensic Integrity
 
-### 4. Honesty & Authenticity Enforcement
-All uploads are verified for:
-- Metadata consistency
-- Structural integrity
-- Timeline coherence
-- Contradiction detection
-- Known forgery indicators
+Evidence processing is deterministic - same input always produces same output, critical for legal proceedings.
 
-If material falsehood, fabrication, or manipulation is detected:
-- Processing is **immediately terminated**
-- Findings are **sealed**
-- Session is **locked**
-- A sealed integrity failure report is generated
+### 3. Optional AI Enhancement
 
-### 5. Constitutional Shutdown Logic
-The system **will not assist** with:
-- Standing violations (unauthorized access to business/multi-party documents)
-- Dishonest submissions (fabricated or manipulated evidence)
-- Deliberate misrepresentation
-- Malicious reuse attempts
+AI features are advisory only and fail gracefully - the forensic engine continues operating without AI availability.
 
-When violations are detected:
-- All materials are sealed
-- Session is terminated
-- Sealed explanation is provided (non-accusatory, factual)
+## 🚀 Quick Start
 
-### 6. Forensic Language Enforcement
-All AI-generated analysis adheres to:
-- Evidentiary analysis only (not legal determinations)
-- Never assigns guilt or recommends prosecution
-- Neutral, objective forensic tone
-- Clear distinction between facts, inferences, and speculation
-- Required disclaimers on all substantive responses
-
-### 7. Authentication Scope
-- **Public access**: Personal matters only
-- **Institutional access**: Corporate and multi-party documents allowed
-- **All users** subject to authenticity checks and shutdown rules
-- **No privileged bypass** - institutions are still subject to enforcement
-
-### Quick Start
+### Development
 
 ```bash
-# Verify Android Studio readiness (NEW!)
-./verify-android-studio-ready.sh
-
-# Check if ready for Android Studio (comprehensive check)
-./preflight-check.sh
-
 # Install dependencies
 npm install
 
-# Run development server
+# Start development server
 npm run dev
 
 # Build for production
 npm run build
 
-# Build and sync to Android
-npm run android:build
-
-# Open in Android Studio (will auto-build)
-npm run android:open
+# Run tests
+npm run test
 ```
 
-### Android Studio Auto-Build
+### Android Build
 
-This project is configured to **automatically build** when opened in Android Studio:
+```bash
+# Sync and build Android
+npm run android:build
 
-1. **Open Project**: File → Open → Select the `android` folder
-2. **Auto-Sync**: Android Studio automatically syncs Gradle (5-10 min first time)
-3. **Auto-Build**: Project builds automatically after sync completes
-4. **Ready to Run**: Click the Run button to install on device/emulator
+# Open in Android Studio
+npm run android:open
 
-**Optimized for speed**: Gradle daemon, parallel builds, and configuration caching enabled.
+# Run on connected device
+npm run android:run
+```
 
-For detailed Android build instructions, see [ANDROID_BUILD.md](./ANDROID_BUILD.md).
+## 📊 Current Status
 
-For logo and watermark integration details, see [LOGO_WATERMARK_INTEGRATION.md](./LOGO_WATERMARK_INTEGRATION.md).
+- ✅ Core forensic engine: Production ready
+- ✅ Web application: Built and tested
+- ✅ Android support: Configured and ready
+- ✅ Cryptographic sealing: Implemented
+- ✅ Evidence management: Complete
+- ⏳ AI integration: Requires Spark backend configuration
+- ⏳ South African law enforcement deployment: Ready for rollout
 
-For signing and automated builds setup, see [SIGNING_SETUP.md](./SIGNING_SETUP.md).
+## 🔐 Security Model
 
+### What's Protected
+- Evidence integrity (cryptographic sealing)
+- Report generation (watermarked PDFs)
+- Case management (encrypted storage)
+- Forensic certificates (SHA-256 hashing)
+
+### What's Optional
+- AI-powered legal analysis (requires separate Spark backend)
+- Conversational chat features
+- Document drafting assistance
+
+### What Doesn't Require Internet
+- Complete forensic scanning
+- Evidence sealing
+- Report generation
+- Certificate creation
+- Case management
+
+## 📞 Support
+
+For South African law enforcement agencies:
+- Contact for deployment and configuration
+- Free access and support
+- Offline-first design for underresourced agencies
+- No external dependency requirements
+
+---
+
+**Proudly South African. Global Justice Access. Free Forever.**
