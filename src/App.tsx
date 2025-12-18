@@ -4,6 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Trash, Lightbulb } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import { UnifiedInput } from '@/components/UnifiedInput'
 import { ChatMessageComponent, type ChatMessage } from '@/components/ChatMessage'
 import { CaseExport } from '@/components/CaseExport'
@@ -471,12 +472,14 @@ Provide a thorough forensic analysis with specific legal considerations.`
   }
 
   return (
-    <div className="flex flex-col bg-background w-full" style={{ 
-      maxWidth: '100vw', 
-      overflowX: 'hidden',
-      minHeight: '100dvh', // Dynamic viewport height for mobile
-      height: '100dvh'
-    }}>
+    <>
+      <SpeedInsights />
+      <div className="flex flex-col bg-background w-full" style={{ 
+        maxWidth: '100vw', 
+        overflowX: 'hidden',
+        minHeight: '100dvh', // Dynamic viewport height for mobile
+        height: '100dvh'
+      }}>
       {/* Minimal Header */}
       <header className="border-b border-border bg-card px-3 sm:px-4 py-2.5 sm:py-3 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
@@ -591,6 +594,7 @@ Provide a thorough forensic analysis with specific legal considerations.`
         </div>
       </div>
     </div>
+    </>
   )
 }
 
