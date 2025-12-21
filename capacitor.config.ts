@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.verumomnis.forensics',
-  appName: 'Verum Omnis',
+  appId: 'foundation.verumglobal.app',
+  appName: 'verumomnis',
   webDir: 'dist'
 };
 
