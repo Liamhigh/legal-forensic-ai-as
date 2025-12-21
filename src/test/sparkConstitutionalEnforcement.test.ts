@@ -1,3 +1,4 @@
+type ConstitutionalReport = { audit: { hasForensicDisclaimer: boolean; hasLimitationsStatement: boolean; hasHedgingLanguage: boolean; }; };
 import { describe, it, expect } from 'vitest'
 import {
   validateConstitutionalCompliance,
@@ -144,21 +145,21 @@ Evidence suggests a timeline. Subject to verification.`
       const response = '⚖️ This is an evidentiary analysis, not a legal determination.'
       const report = generateComplianceReport(response, 'test', {})
       
-      expect(report.audit.hasForensicDisclaimer).toBe(true)
+      expect((report as any).audit.hasForensicDisclaimer).toBe(true)
     })
 
     it('should note presence of limitations in audit', () => {
       const response = 'This is subject to verification.'
       const report = generateComplianceReport(response, 'test', {})
       
-      expect(report.audit.hasLimitationsStatement).toBe(true)
+      expect((report as any).audit.hasLimitationsStatement).toBe(true)
     })
 
     it('should note presence of hedging language in audit', () => {
       const response = 'Evidence may suggest this timeline could be consistent.'
       const report = generateComplianceReport(response, 'test', {})
       
-      expect(report.audit.hasHedgingLanguage).toBe(true)
+      expect((report as any).audit.hasHedgingLanguage).toBe(true)
     })
   })
 

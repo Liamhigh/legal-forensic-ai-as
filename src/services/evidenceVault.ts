@@ -1,3 +1,4 @@
+import { Encoding } from '@capacitor/filesystem';
 /**
  * Evidence Vault Service
  * Manages local storage of sealed evidence files using Capacitor Filesystem
@@ -91,7 +92,7 @@ async function loadManifest(caseId: string): Promise<VaultManifest> {
     const result = await Filesystem.readFile({
       path: `${VAULT_DIR}/${MANIFEST_FILE}`,
       directory: Directory.Documents,
-      encoding: 'utf8'
+      encoding: Encoding.UTF8
     })
 
     return JSON.parse(result.data as string)
@@ -125,7 +126,7 @@ async function saveManifest(manifest: VaultManifest): Promise<void> {
       path: `${VAULT_DIR}/${MANIFEST_FILE}`,
       directory: Directory.Documents,
       data: JSON.stringify(manifest, null, 2),
-      encoding: 'utf8'
+      encoding: Encoding.UTF8
     })
   } catch (error) {
     console.error('Failed to save manifest:', error)
@@ -169,8 +170,8 @@ export async function storeEvidenceInVault(
       await Filesystem.writeFile({
         path: filePath,
         directory: Directory.Documents,
-        data: typeof content === 'string' ? content : content,
-        encoding: typeof content === 'string' ? 'utf8' : undefined
+        data: typeof content === 'string' ? content : new Blob([content]),
+        encoding: typeof content === 'string' ? Encoding.UTF8 : undefined
       })
     } else {
       // For web, store in IndexedDB or localStorage
@@ -226,7 +227,7 @@ export async function retrieveEvidenceFromVault(
       const result = await Filesystem.readFile({
         path: item.path,
         directory: Directory.Documents,
-        encoding: 'utf8'
+        encoding: Encoding.UTF8
       })
       return { item, content: result.data as string }
     } else {

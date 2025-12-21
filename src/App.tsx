@@ -1,199 +1,213 @@
-import { useState, useEffect, useRef } from 'react'
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Trash, Lightbulb } from '@phosphor-icons/react'
-import { toast } from 'sonner'
-import { motion, AnimatePresence } from 'framer-motion'
-import { UnifiedInput } from '@/components/UnifiedInput'
-import { ChatMessageComponent, type ChatMessage } from '@/components/ChatMessage'
-import { CaseExport } from '@/components/CaseExport'
-import { SessionStatus } from '@/components/SessionStatus'
-import { ScannerStatusIndicator } from '@/components/ScannerStatusIndicator'
-import { getForensicLanguageRules } from '@/services/constitutionalEnforcement'
-import { isSessionLocked } from '@/services/authContext'
-import { detectIntent, IntentType, shouldSealContent } from '@/services/intentDetection'
-import { sealDocument } from '@/services/documentSealing'
-import { scanEvidence } from '@/services/scannerOrchestrator'
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Trash, Lightbulb } from "@phosphor-icons/react";
+import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
+import { UnifiedInput } from "@/components/UnifiedInput";
+import {
+  ChatMessageComponent,
+  type ChatMessage,
+} from "@/components/ChatMessage";
+import { CaseExport } from "@/components/CaseExport";
+import { SessionStatus } from "@/components/SessionStatus";
+import { ScannerStatusIndicator } from "@/components/ScannerStatusIndicator";
+import { getForensicLanguageRules } from "@/services/constitutionalEnforcement";
+import { isSessionLocked } from "@/services/authContext";
+import {
+  detectIntent,
+  IntentType,
+  shouldSealContent,
+} from "@/services/intentDetection";
+import { sealDocument } from "@/services/documentSealing";
+import { scanEvidence } from "@/services/scannerOrchestrator";
 import {
   getCurrentCase,
   addConversationEntry,
-  clearCase
-} from '@/services/caseManagement'
-import { recordSessionEvent, sealSession } from '@/services/sessionSealing'
-import { detectAccusation, generateConsistencyReport, formatConsistencyReport } from '@/services/temporalCorrelation'
-import { 
-  isEmailDraftRequest, 
-  extractEmailComponents, 
-  createDraftedEmail, 
+  clearCase,
+} from "@/services/caseManagement";
+import { recordSessionEvent, sealSession } from "@/services/sessionSealing";
+import {
+  detectAccusation,
+  generateConsistencyReport,
+  formatConsistencyReport,
+} from "@/services/temporalCorrelation";
+import {
+  isEmailDraftRequest,
+  extractEmailComponents,
+  createDraftedEmail,
   sealDraftedEmail,
   getEmailSummary,
-  downloadSealedEmail
-} from '@/services/emailSealing'
+  downloadSealedEmail,
+} from "@/services/emailSealing";
 
 const SUGGESTED_PROMPTS = [
   "Analyze the admissibility of digital evidence in this case",
   "Review chain of custody documentation for forensic evidence",
   "Identify potential Brady violations in the prosecution's disclosure",
   "Examine witness testimony for inconsistencies",
-]
+];
 
 function App() {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [currentCase, setCurrentCase] = useState(() => getCurrentCase())
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentCase, setCurrentCase] = useState(() => getCurrentCase());
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages])
+  }, [messages]);
 
   // Initialize case and session on mount
   useEffect(() => {
-    const caseData = getCurrentCase()
-    setCurrentCase(caseData)
-    
+    const caseData = getCurrentCase();
+    setCurrentCase(caseData);
+
     // Record session start
-    recordSessionEvent('session_start', {
+    recordSessionEvent("session_start", {
       caseId: caseData.caseId,
-      startTime: caseData.startTime
-    })
-    
+      startTime: caseData.startTime,
+    });
+
     // Show welcome message
     if (messages.length === 0) {
       const welcomeMessage: ChatMessage = {
-        id: 'welcome',
-        role: 'system',
-        content: '✅ Case session started. Evidence will be automatically sealed and added to your case.',
-        timestamp: Date.now()
-      }
-      setMessages([welcomeMessage])
+        id: "welcome",
+        role: "system",
+        content:
+          "✅ Case session started. Evidence will be automatically sealed and added to your case.",
+        timestamp: Date.now(),
+      };
+      setMessages([welcomeMessage]);
     }
-    
+
     // Set up cleanup on unmount - seal session when app closes
     return () => {
       // Use an async IIFE to handle the async cleanup
       void (async () => {
         try {
-          await sealSession()
-          await recordSessionEvent('session_end', {
+          await sealSession();
+          await recordSessionEvent("session_end", {
             messageCount: messages.length,
-            evidenceCount: getCurrentCase().evidence.length
-          })
-          console.log('Session sealed on app close')
+            evidenceCount: getCurrentCase().evidence.length,
+          });
+          console.log("Session sealed on app close");
         } catch (error) {
-          console.error('Failed to seal session:', error)
+          console.error("Failed to seal session:", error);
         }
-      })()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Only run on mount/unmount
+      })();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount/unmount
 
   const handleSubmit = async (message: string, files?: File[]) => {
-    if ((!message && !files) || isLoading) return
+    if ((!message && !files) || isLoading) return;
 
     // Check if session is locked
     if (isSessionLocked()) {
-      toast.error('Session locked due to constitutional violation', {
-        description: 'Please refresh to start a new session'
-      })
-      return
+      toast.error("Session locked due to constitutional violation", {
+        description: "Please refresh to start a new session",
+      });
+      return;
     }
 
     // Detect intent
-    const intent = detectIntent(message, !!files && files.length > 0)
-    const shouldSeal = shouldSealContent(intent)
-    
+    const intent = detectIntent(message, !!files && files.length > 0);
+    const shouldSeal = shouldSealContent(intent);
+
     // Check if this is an email draft request
-    const isEmailRequest = isEmailDraftRequest(message)
+    const isEmailRequest = isEmailDraftRequest(message);
 
     // Check for accusations/timeline disputes (passive detection)
-    const accusationDetection = detectAccusation(message)
-    
+    const accusationDetection = detectAccusation(message);
+
     // Handle file uploads (evidence) - Scanner action, not conversational chat
     if (files && files.length > 0) {
       // For scanner commands, add a distinct "Scanner task initiated" message
       // instead of a regular chat bubble
       const scannerMessage: ChatMessage = {
         id: `scanner-${Date.now()}`,
-        role: 'user',
-        content: message || 'Scanning evidence...',
+        role: "user",
+        content: message || "Scanning evidence...",
         timestamp: Date.now(),
         isScannerCommand: true,
-        scannerFileName: files.map(f => f.name).join(', ')
-      }
-      setMessages((current) => [...current, scannerMessage])
-      
+        scannerFileName: files.map((f) => f.name).join(", "),
+      };
+      setMessages((current) => [...current, scannerMessage]);
+
       for (const file of files) {
-        await handleEvidenceUpload(file, message)
+        await handleEvidenceUpload(file, message);
       }
-      
+
       // If there's no message, just return after processing files
-      if (!message) return
+      if (!message) return;
     }
 
     // Add user message - only for conversational chat (no files)
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
-      role: 'user',
+      role: "user",
       content: message,
       timestamp: Date.now(),
-      sealed: shouldSeal
-    }
+      sealed: shouldSeal,
+    };
 
-    setMessages((current) => [...current, userMessage])
-    
+    setMessages((current) => [...current, userMessage]);
+
     // Record user interaction event
-    await recordSessionEvent('user_interaction', {
+    await recordSessionEvent("user_interaction", {
       messageLength: message.length,
       hasFiles: !!files && files.length > 0,
       accusationDetected: accusationDetection.detected,
-      isEmailRequest
-    })
-    
+      isEmailRequest,
+    });
+
     // Add to conversation log
-    addConversationEntry('user', message, shouldSeal)
-    
+    addConversationEntry("user", message, shouldSeal);
+
     // If accusation detected, generate consistency report automatically
     if (accusationDetection.detected) {
       try {
-        const report = await generateConsistencyReport(message)
-        const formattedReport = formatConsistencyReport(report)
-        
+        const report = await generateConsistencyReport(message);
+        const formattedReport = formatConsistencyReport(report);
+
         // Show consistency report
         const reportMessage: ChatMessage = {
           id: `consistency-${Date.now()}`,
-          role: 'system',
+          role: "system",
           content: `🔍 Timeline correlation detected\n\nA consistency report has been automatically generated based on your sealed session records.\n\n${formattedReport}`,
           timestamp: Date.now(),
-          sealed: true
-        }
-        
-        setMessages((current) => [...current, reportMessage])
-        
-        toast.info('Consistency report generated', {
-          description: 'Temporal correlation analysis completed'
-        })
+          sealed: true,
+        };
+
+        setMessages((current) => [...current, reportMessage]);
+
+        toast.info("Consistency report generated", {
+          description: "Temporal correlation analysis completed",
+        });
       } catch (error) {
-        console.log('Consistency report not generated:', error)
+        console.log("Consistency report not generated:", error);
         // Silent failure - this is optional augmentation
       }
     }
-    
-    setIsLoading(true)
+
+    setIsLoading(true);
 
     try {
       // Check if Spark API is available
       if (!window.spark?.llm) {
-        throw new Error('Spark API not available. Please ensure the application is running in a GitHub Spark environment.')
+        throw new Error(
+          "Spark API not available. Please ensure the application is running in a GitHub Spark environment.",
+        );
       }
 
       // Get forensic language enforcement rules
-      const forensicRules = getForensicLanguageRules()
-      
+      const forensicRules = getForensicLanguageRules();
+
       // Adjust system prompt based on intent
-      let systemPrompt = ''
+      let systemPrompt = "";
       if (isEmailRequest) {
         systemPrompt = `You are Verum Omnis, a forensic legal assistant. The user is requesting you to draft an email.
 
@@ -202,7 +216,7 @@ ${forensicRules}
 CRITICAL: Draft the email in a professional format with clear To:, Subject:, and body sections.
 Do NOT add follow-up questions, suggestions, or commentary outside the email itself.
 
-User request: ${message}`
+User request: ${message}`;
       } else if (intent === IntentType.FORENSIC_OUTPUT) {
         systemPrompt = `You are Verum Omnis, a forensic legal assistant. The user is requesting you to draft or generate a legal document.
 
@@ -217,7 +231,7 @@ CRITICAL: Your response should contain ONLY the requested document content. Do N
 
 Generate a clean, professional document that can be immediately sealed and used.
 
-User request: ${message}`
+User request: ${message}`;
       } else {
         systemPrompt = `You are Verum Omnis, the world's first AI-powered legal forensics assistant. You help legal professionals analyze evidence, research case law, and construct compelling arguments.
 
@@ -227,89 +241,112 @@ This is a conversational discussion. Provide helpful analysis and guidance.
 
 User query: ${message}
 
-Provide a thorough forensic analysis with specific legal considerations.`
+Provide a thorough forensic analysis with specific legal considerations.`;
       }
 
-      const prompt = (window as unknown as { spark: { llmPrompt: (strings: TemplateStringsArray, ...values: unknown[]) => unknown } }).spark.llmPrompt`${systemPrompt}`
-      const response = await (window as unknown as { spark: { llm: (prompt: unknown, model: string) => Promise<string> } }).spark.llm(prompt, 'gpt-4o')
+      const prompt = (
+        window as unknown as {
+          spark: {
+            llmPrompt: (
+              strings: TemplateStringsArray,
+              ...values: unknown[]
+            ) => unknown;
+          };
+        }
+      ).spark.llmPrompt`${systemPrompt}`;
+      const response = await (
+        window as unknown as {
+          spark: { llm: (prompt: unknown, model: string) => Promise<string> };
+        }
+      ).spark.llm(prompt, "gpt-4o");
 
       // For email drafts, seal as email
       if (isEmailRequest) {
-        await handleEmailDraft(response, message)
+        await handleEmailDraft(response, message);
       } else if (shouldSeal) {
         // For other forensic output, seal as document
-        await handleForensicOutput(response, message)
+        await handleForensicOutput(response, message);
       } else {
         // Normal conversation - just add assistant message
         const assistantMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
-          role: 'assistant',
+          role: "assistant",
           content: response,
           timestamp: Date.now(),
-          sealed: false
-        }
+          sealed: false,
+        };
 
-        setMessages((current) => [...current, assistantMessage])
-        addConversationEntry('assistant', response, false)
+        setMessages((current) => [...current, assistantMessage]);
+        addConversationEntry("assistant", response, false);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      const errorString = String(error)
-      
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      const errorString = String(error);
+
       // Check for specific Spark API errors
-      if (errorMessage.includes('Spark API not available')) {
-        toast.error('AI API not configured', {
-          description: 'This application requires GitHub Spark runtime. Please deploy to GitHub Spark or configure an API endpoint.'
-        })
-        
+      if (errorMessage.includes("Spark API not available")) {
+        toast.error("AI API not configured", {
+          description:
+            "This application requires GitHub Spark runtime. Please deploy to GitHub Spark or configure an API endpoint.",
+        });
+
         // Add system message explaining the issue
         const systemMessage: ChatMessage = {
           id: `sys-api-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          role: 'system',
-          content: '⚠️ AI API Not Available\n\nThis application requires the GitHub Spark runtime to function. The chat functionality will not work in local development without proper Spark configuration.\n\nTo use this feature:\n1. Deploy to GitHub Spark\n2. Configure SPARK_AGENT_URL environment variable\n3. Ensure Spark backend is running',
-          timestamp: Date.now()
-        }
-        setMessages((current) => [...current, systemMessage])
-      } else if (errorString.includes('LLM request failed') || errorMessage.includes('500') || errorMessage.includes('403')) {
-        toast.error('AI Service Unavailable', {
-          description: 'The GitHub Spark AI service is not accessible. This app requires deployment to GitHub Spark to function.'
-        })
-        
+          role: "system",
+          content:
+            "⚠️ AI API Not Available\n\nThis application requires the GitHub Spark runtime to function. The chat functionality will not work in local development without proper Spark configuration.\n\nTo use this feature:\n1. Deploy to GitHub Spark\n2. Configure SPARK_AGENT_URL environment variable\n3. Ensure Spark backend is running",
+          timestamp: Date.now(),
+        };
+        setMessages((current) => [...current, systemMessage]);
+      } else if (
+        errorString.includes("LLM request failed") ||
+        errorMessage.includes("500") ||
+        errorMessage.includes("403")
+      ) {
+        toast.error("AI Service Unavailable", {
+          description:
+            "The GitHub Spark AI service is not accessible. This app requires deployment to GitHub Spark to function.",
+        });
+
         // Add helpful system message
         const systemMessage: ChatMessage = {
           id: `sys-llm-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          role: 'system',
-          content: '⚠️ AI Service Connection Failed\n\nThe chat AI is not available in this environment. This application is designed to run on GitHub Spark.\n\n**Why this happened:**\n- The Spark LLM backend is not running\n- Missing SPARK_AGENT_URL configuration\n- Not deployed to GitHub Spark environment\n\n**Note:** Other features like document sealing and PDF generation still work!',
-          timestamp: Date.now()
-        }
-        setMessages((current) => [...current, systemMessage])
+          role: "system",
+          content:
+            "⚠️ AI Service Connection Failed\n\nThe chat AI is not available in this environment. This application is designed to run on GitHub Spark.\n\n**Why this happened:**\n- The Spark LLM backend is not running\n- Missing SPARK_AGENT_URL configuration\n- Not deployed to GitHub Spark environment\n\n**Note:** Other features like document sealing and PDF generation still work!",
+          timestamp: Date.now(),
+        };
+        setMessages((current) => [...current, systemMessage]);
       } else {
-        toast.error('Failed to get response', {
-          description: 'Please try again or contact support if the issue persists.'
-        })
+        toast.error("Failed to get response", {
+          description:
+            "Please try again or contact support if the issue persists.",
+        });
       }
-      
-      console.error('Error:', error)
+
+      console.error("Error:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleEvidenceUpload = async (file: File, userMessage?: string) => {
     try {
       // Use scanner orchestrator - it manages its own state
-      const result = await scanEvidence(file, userMessage)
-      
+      const result = await scanEvidence(file, userMessage);
+
       // Update current case state
-      setCurrentCase(getCurrentCase())
+      setCurrentCase(getCurrentCase());
 
       // Show sealed artifacts in chat
       const sealedMessage: ChatMessage = {
         id: `sealed-${Date.now()}`,
-        role: 'system',
-        content: result.aiAnalysisIncluded 
-          ? '✅ Document scanned and sealed\n🔒 Certificate generated and bound\n🤖 AI analysis included\n📁 Added to current case'
-          : '✅ Document scanned and sealed\n🔒 Certificate generated and bound\n⚠️ AI analysis unavailable - baseline scan completed\n📁 Added to current case',
+        role: "system",
+        content: result.aiAnalysisIncluded
+          ? "✅ Document scanned and sealed\n🔒 Certificate generated and bound\n🤖 AI analysis included\n📁 Added to current case"
+          : "✅ Document scanned and sealed\n🔒 Certificate generated and bound\n⚠️ AI analysis unavailable - baseline scan completed\n📁 Added to current case",
         timestamp: Date.now(),
         sealedArtifacts: {
           fileName: file.name,
@@ -318,172 +355,185 @@ Provide a thorough forensic analysis with specific legal considerations.`
           certificateHash: result.certificateHash,
           bundleHash: result.bundleHash,
           documentContent: result.documentContent,
-          certificateContent: result.certificateContent
+          certificateContent: result.certificateContent,
         },
         onAskQuestion: (question: string) => {
           // User clicked on a suggested question - submit it
-          handleSubmit(question)
-        }
-      }
+          handleSubmit(question);
+        },
+      };
 
-      setMessages((current) => [...current, sealedMessage])
-
+      setMessages((current) => [...current, sealedMessage]);
     } catch (error) {
-      console.error('Error processing evidence:', error)
-      
-      toast.error('Failed to seal evidence', {
-        description: (error as Error).message
-      })
-      
+      console.error("Error processing evidence:", error);
+
+      toast.error("Failed to seal evidence", {
+        description: (error as Error).message,
+      });
+
       // Add error message to chat
       const errorMessage: ChatMessage = {
         id: `error-${Date.now()}`,
-        role: 'system',
+        role: "system",
         content: `❌ Scanner error: ${(error as Error).message}\n\nPlease try again or contact support if the issue persists.`,
-        timestamp: Date.now()
-      }
-      setMessages((current) => [...current, errorMessage])
+        timestamp: Date.now(),
+      };
+      setMessages((current) => [...current, errorMessage]);
     }
-  }
+  };
 
-  const handleForensicOutput = async (content: string, _originalRequest: string) => {
+  const handleForensicOutput = async (
+    content: string,
+    _originalRequest: string,
+  ) => {
     try {
       // This is a drafted document - seal it
-      await sealDocument(content, `draft_${Date.now()}.txt`)
+      await sealDocument(content, `draft_${Date.now()}.txt`);
 
       // Add sealed document to case as conversation entry
-      addConversationEntry('assistant', content, true)
+      addConversationEntry("assistant", content, true);
 
       // Show assistant message with seal indicator
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        role: 'assistant',
+        role: "assistant",
         content: content,
         timestamp: Date.now(),
-        sealed: true
-      }
+        sealed: true,
+      };
 
-      setMessages((current) => [...current, assistantMessage])
+      setMessages((current) => [...current, assistantMessage]);
 
       // Add system confirmation
       const systemMessage: ChatMessage = {
         id: `sys-${Date.now()}`,
-        role: 'system',
-        content: '✅ Sealed document generated and added to case',
-        timestamp: Date.now()
-      }
+        role: "system",
+        content: "✅ Sealed document generated and added to case",
+        timestamp: Date.now(),
+      };
 
-      setMessages((current) => [...current, systemMessage])
-
+      setMessages((current) => [...current, systemMessage]);
     } catch (error) {
-      console.error('Error sealing output:', error)
-      
+      console.error("Error sealing output:", error);
+
       // Still show the content but without sealing
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        role: 'assistant',
+        role: "assistant",
         content: content,
         timestamp: Date.now(),
-        sealed: false
-      }
+        sealed: false,
+      };
 
-      setMessages((current) => [...current, assistantMessage])
-      addConversationEntry('assistant', content, false)
+      setMessages((current) => [...current, assistantMessage]);
+      addConversationEntry("assistant", content, false);
 
-      toast.error('Document generated but sealing failed')
+      toast.error("Document generated but sealing failed");
     }
-  }
+  };
 
-  const handleEmailDraft = async (content: string, _originalRequest: string) => {
+  const handleEmailDraft = async (
+    content: string,
+    _originalRequest: string,
+  ) => {
     try {
       // Extract email components
-      const components = extractEmailComponents(_originalRequest, content)
-      
+      const components = extractEmailComponents(_originalRequest, content);
+
       // Create drafted email
       const draftedEmail = createDraftedEmail(
         components.to,
         components.subject,
-        components.body
-      )
-      
+        components.body,
+      );
+
       // Seal the email
-      const sealedEmail = await sealDraftedEmail(draftedEmail, currentCase.caseId)
-      
+      const sealedEmail = await sealDraftedEmail(
+        draftedEmail,
+        currentCase.caseId,
+      );
+
       // Add sealed email to conversation entry
-      addConversationEntry('assistant', content, true)
-      
+      addConversationEntry("assistant", content, true);
+
       // Show the email content in chat
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        role: 'assistant',
+        role: "assistant",
         content: content,
         timestamp: Date.now(),
-        sealed: true
-      }
-      
-      setMessages((current) => [...current, assistantMessage])
-      
+        sealed: true,
+      };
+
+      setMessages((current) => [...current, assistantMessage]);
+
       // Show email sealing summary
       const summaryMessage: ChatMessage = {
         id: `email-summary-${Date.now()}`,
-        role: 'system',
+        role: "system",
         content: getEmailSummary(sealedEmail),
-        timestamp: Date.now()
-      }
-      
-      setMessages((current) => [...current, summaryMessage])
-      
+        timestamp: Date.now(),
+      };
+
+      setMessages((current) => [...current, summaryMessage]);
+
       // Offer download
-      toast.success('Email draft sealed', {
-        description: 'Download sealed PDF to send as attachment',
+      toast.success("Email draft sealed", {
+        description: "Download sealed PDF to send as attachment",
         action: {
-          label: 'Download',
-          onClick: () => downloadSealedEmail(sealedEmail)
-        }
-      })
-      
+          label: "Download",
+          onClick: () => downloadSealedEmail(sealedEmail),
+        },
+      });
     } catch (error) {
-      console.error('Error sealing email:', error)
-      
+      console.error("Error sealing email:", error);
+
       // Still show the content but without sealing
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        role: 'assistant',
+        role: "assistant",
         content: content,
         timestamp: Date.now(),
-        sealed: false
-      }
+        sealed: false,
+      };
 
-      setMessages((current) => [...current, assistantMessage])
-      addConversationEntry('assistant', content, false)
+      setMessages((current) => [...current, assistantMessage]);
+      addConversationEntry("assistant", content, false);
 
-      toast.error('Email drafted but sealing failed')
+      toast.error("Email drafted but sealing failed");
     }
-  }
+  };
 
   const handleClear = () => {
-    if (confirm('Are you sure you want to clear this case? This will start a new case session.')) {
-      clearCase()
-      setMessages([])
-      setCurrentCase(getCurrentCase())
-      toast.success('Case cleared - new session started')
+    if (
+      confirm(
+        "Are you sure you want to clear this case? This will start a new case session.",
+      )
+    ) {
+      clearCase();
+      setMessages([]);
+      setCurrentCase(getCurrentCase());
+      toast.success("Case cleared - new session started");
     }
-  }
+  };
 
   return (
-    <div className="flex flex-col bg-background w-full" style={{ 
-      maxWidth: '100vw', 
-      overflowX: 'hidden',
-      minHeight: '100dvh', // Dynamic viewport height for mobile
-      height: '100dvh'
-    }}>
+    <div
+      className="flex flex-col bg-background w-full"
+      style={{
+        maxWidth: "100vw",
+        overflowX: "hidden",
+        minHeight: "100dvh", // Dynamic viewport height for mobile
+        height: "100dvh",
+      }}
+    >
       {/* Minimal Header */}
       <header className="border-b border-border bg-card px-3 sm:px-4 py-2.5 sm:py-3 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <img 
-              src="/assets/company-logo-2.jpg" 
-              alt="Verum Omnis Logo" 
+            <img
+              src="/assets/company-logo-2.jpg"
+              alt="Verum Omnis Logo"
               className="h-7 w-7 sm:h-8 sm:w-8 object-contain rounded flex-shrink-0"
             />
             <div className="min-w-0">
@@ -515,35 +565,55 @@ Provide a thorough forensic analysis with specific legal considerations.`
       {/* Main Chat Area - Full Height */}
       <div className="flex-1 overflow-hidden w-full">
         <ScrollArea className="h-full w-full">
-          <div ref={scrollRef} className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 w-full" style={{ boxSizing: 'border-box' }}>
-            {messages.length === 0 || (messages.length === 1 && messages[0].id === 'welcome') ? (
+          <div
+            ref={scrollRef}
+            className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 w-full"
+            style={{ boxSizing: "border-box" }}
+          >
+            {messages.length === 0 ||
+            (messages.length === 1 && messages[0].id === "welcome") ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] text-center px-4 w-full"
               >
-                <img 
-                  src="/assets/company-logo-2.jpg" 
-                  alt="Verum Omnis Logo" 
+                <img
+                  src="/assets/company-logo-2.jpg"
+                  alt="Verum Omnis Logo"
                   className="h-16 w-16 sm:h-20 sm:w-20 object-contain rounded-lg mb-4 sm:mb-6"
                 />
                 <h2 className="text-xl sm:text-2xl font-semibold text-foreground mb-2 sm:mb-3">
                   Welcome to Verum Omnis
                 </h2>
                 <p className="text-base sm:text-lg text-muted-foreground mb-4 sm:mb-6 max-w-2xl leading-relaxed">
-                  Your forensic thinking partner. Add evidence, ask questions, or request documents.
-                  Everything is automatically sealed and added to your case.
+                  Your forensic thinking partner. Add evidence, ask questions,
+                  or request documents. Everything is automatically sealed and
+                  added to your case.
                 </p>
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-muted/50 rounded-full px-3 sm:px-4 py-2">
-                  <Lightbulb size={16} weight="duotone" className="text-muted-foreground flex-shrink-0" aria-hidden="true" />
-                  <span className="text-center">Click the <strong>+</strong> button below to see suggested actions</span>
+                  <Lightbulb
+                    size={16}
+                    weight="duotone"
+                    className="text-muted-foreground flex-shrink-0"
+                    aria-hidden="true"
+                  />
+                  <span className="text-center">
+                    Click the <strong>+</strong> button below to see suggested
+                    actions
+                  </span>
                 </div>
               </motion.div>
             ) : (
-              <div className="space-y-6" style={{ maxWidth: 'var(--max-width-chat, 680px)', margin: '0 auto' }}>
+              <div
+                className="space-y-6"
+                style={{
+                  maxWidth: "var(--max-width-chat, 680px)",
+                  margin: "0 auto",
+                }}
+              >
                 {/* Scanner Status Indicator - Independent of chat messages */}
                 <ScannerStatusIndicator />
-                
+
                 <AnimatePresence>
                   {messages.map((message) => (
                     <motion.div
@@ -581,7 +651,13 @@ Provide a thorough forensic analysis with specific legal considerations.`
 
       {/* Input Area - Fixed Bottom */}
       <div className="border-t border-border bg-card px-3 sm:px-4 py-3 sm:py-4 flex-shrink-0 w-full">
-        <div className="max-w-3xl mx-auto w-full" style={{ maxWidth: 'var(--max-width-chat, 680px)', boxSizing: 'border-box' }}>
+        <div
+          className="max-w-3xl mx-auto w-full"
+          style={{
+            maxWidth: "var(--max-width-chat, 680px)",
+            boxSizing: "border-box",
+          }}
+        >
           <UnifiedInput
             onSubmit={handleSubmit}
             disabled={isLoading}
@@ -591,7 +667,7 @@ Provide a thorough forensic analysis with specific legal considerations.`
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState } from 'react';
+const [password, setPassword] = useState('');
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
