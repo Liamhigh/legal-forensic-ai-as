@@ -1,127 +1,141 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verum Omnis</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verum Omnis</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  color: #f5f5f5;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
 
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #000;
-      color: #f5f5f5;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    }
+.hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
 
-    .hero {
-      position: relative;
-      width: 100%;
-      height: 100vh;
-      overflow: hidden;
-    }
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+.tap-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.1rem;
+  padding: 10px 18px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0.95;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+}
 
-    .logo-overlay {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      width: 46%;
-      max-width: 260px;
-      opacity: 0.96;
-      pointer-events: none;
-    }
+.logo-overlay {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 46%;
+  max-width: 280px;
+  opacity: 0.96;
+  pointer-events: none;
+}
 
-    @media (min-width: 768px) {
-      .logo-overlay {
-        width: 30%;
-      }
-    }
+@media (min-width: 768px) {
+  .logo-overlay {
+    width: 32%;
+  }
+}
 
-    .overlay-text {
-      position: absolute;
-      bottom: 120px;
-      left: 20px;
-      right: 20px;
-      text-align: center;
-    }
+.overlay-text {
+  position: absolute;
+  bottom: 120px;
+  left: 20px;
+  right: 20px;
+  text-align: center;
+}
 
-    h1 {
-      font-size: 1.35rem;
-      margin: 0 0 10px 0;
-      color: #f8f8f8;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.65);
-    }
+h1 {
+  font-size: 1.35rem;
+  margin: 0 0 10px 0;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.65);
+}
 
-    h2 {
-      font-size: 1.05rem;
-      font-weight: 400;
-      opacity: 0.95;
-      margin: 0 0 18px 0;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.6);
-    }
+h2 {
+  font-size: 1.05rem;
+  font-weight: 400;
+  opacity: 0.95;
+  margin: 0 0 18px 0;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
 
-    button {
-      background: #ffffff;
-      color: #000;
-      border: none;
-      padding: 14px 26px;
-      font-size: 1rem;
-      font-weight: 600;
-      border-radius: 10px;
-      cursor: pointer;
-    }
+button {
+  background: #fff;
+  color: #000;
+  border: none;
+  padding: 14px 26px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+}
 
-    /* Constitution footer — calm, subtle */
-    .constitution {
-      position: absolute;
-      bottom: 64px;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      font-size: 0.65rem;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.6);
-      pointer-events: none;
-    }
-  </style>
+/* Constitution footer */
+.constitution {
+  position: absolute;
+  bottom: 64px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  pointer-events: none;
+}
+</style>
 </head>
-
 <body>
 
-  <div class="hero">
+<div class="hero">
 
-    <video controls playsinline>
-      <source src="assets/Verum%20omnis%20video.mp4" type="video/mp4">
-    </video>
+  <video id="heroVideo" controls playsinline>
+    <source src="assets/Verum%20omnis%20video.mp4" type="video/mp4">
+  </video>
 
-    <img
-      src="assets/company-logo-2.jpg"
-      alt="Verum Omnis"
-      class="logo-overlay"
-    >
+  <div id="tapPrompt" class="tap-play">Tap to play video</div>
 
-    <div class="overlay-text">
-      <h1>For the first time in history, everyone has access to justice — for free.</h1>
-      <h2>Verum Omnis is a law firm in your pocket.</h2>
+  <img src="assets/company-logo-2.jpg" alt="Verum Omnis" class="logo-overlay">
 
-      <button onclick="window.location.href='https://app.verumomnis.org'">
-        Enter Verum Omnis
-      </button>
-    </div>
-
-    <div class="constitution">
-      Governed by the Verum Omnis Constitution · Integrity · Truth · Due Process
-    </div>
-
+  <div class="overlay-text">
+    <h1>For the first time in history, everyone has access to justice — for free.</h1>
+    <h2>Verum Omnis is a law firm in your pocket.</h2>
+    <button onclick="window.location.href='https://app.verumomnis.org'">Enter Verum Omnis</button>
   </div>
+
+  <div class="constitution">
+    Governed by the Verum Omnis Constitution · Integrity · Truth · Due Process
+  </div>
+</div>
+
+<script>
+const video = document.getElementById('heroVideo');
+const tapPrompt = document.getElementById('tapPrompt');
+
+video.addEventListener('play', () => {
+  tapPrompt.style.display = 'none';
+});
+</script>
 
 </body>
 </html>
