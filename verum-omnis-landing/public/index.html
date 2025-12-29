@@ -1,110 +1,120 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Verum Omnis</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verum Omnis</title>
 
-<style>
-html, body {
-  margin: 0;
-  padding: 0;
-  background: #000;
-  color: #fff;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-}
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #fff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
 
-.hero {
-  position: relative;
-  width: 100%;
-  max-height: 70vh;
-  overflow: hidden;
-}
+    .hero {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+    }
 
-video {
-  width: 100%;
-  height: auto;
-  display: block;
-}
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
 
-.unmute {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,0.7);
-  color: #fff;
-  border: 1px solid #fff;
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
+    .logo-overlay {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      width: 55%;
+      max-width: 360px;
+      opacity: 0.96;
+      pointer-events: none;
+    }
 
-.content {
-  padding: 24px 16px 40px;
-  text-align: center;
-}
+    @media (min-width: 768px) {
+      .logo-overlay {
+        width: 32%;
+      }
+    }
 
-h1 {
-  font-size: 1.6rem;
-  margin-bottom: 12px;
-}
+    .overlay-text {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      text-align: right;
+      max-width: 45%;
+    }
 
-h2 {
-  font-size: 1.2rem;
-  font-weight: 400;
-  opacity: 0.9;
-  margin-bottom: 24px;
-}
+    h1 {
+      font-size: 1.3rem;
+      margin: 0 0 8px 0;
+    }
 
-button {
-  background: #fff;
-  color: #000;
-  border: none;
-  padding: 16px 28px;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 10px;
-  cursor: pointer;
-}
+    h2 {
+      font-size: 1rem;
+      font-weight: 400;
+      opacity: 0.9;
+      margin: 0 0 16px 0;
+    }
 
-.note {
-  margin-top: 12px;
-  font-size: 0.8rem;
-  opacity: 0.7;
-}
-</style>
+    button {
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 14px 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .sound-note {
+      margin-top: 8px;
+      font-size: 0.7rem;
+      opacity: 0.6;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="hero">
-  <video id="heroVideo" autoplay muted loop playsinline>
-    <source src="assets/Verum%20omnis%20video.mp4" type="video/mp4">
-  </video>
-  <div class="unmute" onclick="unmute()">Tap for sound</div>
-</div>
+  <div class="hero">
+    <video id="heroVideo" autoplay muted loop playsinline>
+      <source src="assets/Verum%20omnis%20video.mp4" type="video/mp4">
+    </video>
 
-<div class="content">
-  <h1>For the first time in history, everyone has access to justice — for free.</h1>
-  <h2>Verum Omnis is a law firm in your pocket.</h2>
+    <img
+      src="assets/company-logo-2.jpg"
+      alt="Verum Omnis"
+      class="logo-overlay"
+    >
 
-  <button onclick="window.location.href='https://app.verumomnis.org'">
-    Enter Verum Omnis
-  </button>
+    <div class="overlay-text">
+      <h1>For the first time in history, everyone has access to justice — for free.</h1>
+      <h2>Verum Omnis is a law firm in your pocket.</h2>
 
-  <div class="note">Free for people. Always.</div>
-</div>
+      <button onclick="window.location.href='https://app.verumomnis.org'">
+        Enter Verum Omnis
+      </button>
 
-<script>
-function unmute() {
-  const v = document.getElementById('heroVideo');
-  v.muted = false;
-  v.play();
-  document.querySelector('.unmute').style.display = 'none';
-}
-</script>
+      <div class="sound-note">Tap video for sound</div>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('heroVideo');
+    video.addEventListener('click', () => {
+      video.muted = false;
+      video.play();
+    });
+  </script>
 
 </body>
 </html>
