@@ -1,0 +1,72 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verum Omnis</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #fff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      text-align: center;
+    }
+    video {
+      width: 100%;
+      height: auto;
+      max-height: 70vh;
+      object-fit: cover;
+    }
+    .content {
+      padding: 24px 16px;
+    }
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 12px;
+    }
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 400;
+      opacity: 0.9;
+      margin-bottom: 24px;
+    }
+    button {
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 16px 28px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .note {
+      margin-top: 12px;
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+
+  <video autoplay muted loop playsinline>
+    <source src="assets/hero.mp4" type="video/mp4">
+  </video>
+
+  <div class="content">
+    <h1>For the first time in history, everyone has access to justice — for free.</h1>
+    <h2>Verum Omnis is a law firm in your pocket.</h2>
+
+    <button onclick="window.location.href='https://app.verumomnis.org'">
+      Enter Verum Omnis
+    </button>
+
+    <div class="note">
+      Free for people. Always.
+    </div>
+  </div>
+
+</body>
+</html>
